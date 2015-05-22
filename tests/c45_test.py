@@ -1,5 +1,6 @@
 import unittest
 import hew.c45 as sut
+import sys
 
 class Test_C45_test(unittest.TestCase):
     def setUp(self):
@@ -24,10 +25,10 @@ class Test_C45_test(unittest.TestCase):
         assert(len(target.columnSet['arg3']) == 4)
         self.assertEquals(sorted(set(target.columnSet['arg1'])), ['left', 'right'])
 
-    def test_freq(self):
-        self.assertEquals(self.target.freq('arg1', 'left'), 2)
-        self.assertEquals(self.target.freq('result', 'no'), 2)
-        self.assertEquals(self.target.freq('arg3', 'foo'), 0)
+    def test_frequency(self):
+        self.assertEquals(self.target.frequency('arg1', 'left'), 2)
+        self.assertEquals(self.target.frequency('result', 'no'), 2)
+        self.assertEquals(self.target.frequency('arg3', 'foo'), 0)
 
     def test_info(self):
         self.assertEquals(self.target.info('result'), 1)
@@ -60,7 +61,7 @@ class Test_C45_test(unittest.TestCase):
         self.assertEqual(self.target.get_values('arg1', []), [])
         self.assertEqual(self.target.get_values('arg1', [9, 12]), [])
 
-    def test_partition(self):
+    def test_buildPartition(self):
         expected = {
             'result': ['yes', 'no'],
             'arg1': ['left', 'right'],
@@ -68,7 +69,7 @@ class Test_C45_test(unittest.TestCase):
             'arg3': ['no', 'no'],
             'argX': ['x', 'x']
         }
-        self.assertEquals(self.target.partition('arg3', 'no').columnSet, expected)
+        self.assertEquals(self.target.buildPartition('arg3', 'no').columnSet, expected)
         expected = {
             'result': [],
             'arg1': [],
@@ -76,7 +77,7 @@ class Test_C45_test(unittest.TestCase):
             'arg3': [],
             'argX' : []
         }
-        self.assertEquals(self.target.partition('arg3', 'maybe').columnSet, expected)
+        self.assertEquals(self.target.buildPartition('arg3', 'maybe').columnSet, expected)
         expected = {
             'result': ['yes', 'yes', 'no'],
             'arg1': ['left', 'right', 'right'],
@@ -84,9 +85,9 @@ class Test_C45_test(unittest.TestCase):
             'arg3': ['no', 'yes', 'no'],
             'argX': ['x', 'x', 'x']
         }
-        self.assertEquals(self.target.partition('arg2', 'down').columnSet, expected)
+        self.assertEquals(self.target.buildPartition('arg2', 'down').columnSet, expected)
 
-    def test_partitionOnColumn(self):
+    def test_partitionOnFeature(self):
         expected = [
         {   'result': ['yes', 'no'],
             'arg1': ['left', 'left'],
@@ -100,15 +101,14 @@ class Test_C45_test(unittest.TestCase):
             'arg3': ['yes', 'no'],
             'argX': ['x', 'x']
         }]
-        actual = self.target.partitionOnColumn('arg1')
+        actual = self.target.partitionOnFeature('arg1')
         leftIdx = 0 if actual[0].partitionValue == 'left' else 1
         rightIdx = 1 - leftIdx
         self.assertEquals(actual[leftIdx].columnSet, expected[0])
         self.assertEquals(actual[rightIdx].columnSet, expected[1])
 
     def test_makeDecisionTree(self):
-        actual = sut.C45.makeDecisionTree(self.input, 'result')
-        print(actual)
+        sut.C45.makeDecisionTree(self.input, 'result', sys.stdout)
 
 if __name__ == '__main__':
     unittest.main()
