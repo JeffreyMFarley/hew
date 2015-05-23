@@ -44,7 +44,7 @@ class C45:
         return '{0}={1}'.format(self.partitionKey, self.partitionValue)
 
     def size(self):
-        col = self.partitionKey if self.partitionKey else list(self.columnSet.keys())[0]
+        col = list(self.columnSet.keys())[0]
         return len(self.columnSet[col])
 
     def flen(self, col):
@@ -153,7 +153,7 @@ class C45:
             target = "~".join(set(c45.uniques(res_col)))
             line = "{0}\t{1}\t{2}={3}\t{4}".format(c45.size(), len(predicates),
                                                    res_col, target, 
-                                                   ' and '.join(predicates))
+                                                   ' & '.join(predicates))
             print(line, file=file)
         else:
             for c in node.children:
