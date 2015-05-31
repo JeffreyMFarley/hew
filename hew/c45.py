@@ -14,6 +14,8 @@ class C45:
         self.columnSet = dictionaryOfLists
         self.partitionKey = None
         self.partitionValue = None
+        self.depth = 1
+        self.maxDepth = 100
         if validate:
             self._validate()
 
@@ -114,6 +116,8 @@ class C45:
              for k, v in self.columnSet.items()}
         
         sub = C45(p, False)
+        sub.depth = self.depth + 1
+        sub.maxDepth = self.maxDepth
         sub.partitionKey = col
         sub.partitionValue = v
         return sub
@@ -127,6 +131,9 @@ class C45:
 
     def buildTree(self, res_col):
         tree = Node(self)
+
+        if self.depth >= self.maxDepth:
+            return tree
 
         gain_list = [(k, self.gain(k, res_col)) 
                      for k in self.columnSet if k != res_col]
@@ -160,11 +167,13 @@ class C45:
                 cls.outputDecision(c, res_col, list(predicates), file)
 
     @classmethod
-    def makeDecisionTree(cls, arrayOfDictionaries, res_col, file):
+    def makeDecisionTree(cls, arrayOfDictionaries, res_col, file, maxDepth=20):
         """ Returns a tree of decisions from _arrayOfDictionaries_
             _res_col_ must be the name of field that contains the target result
         """
-        a = C45.fromTable(arrayOfDictionaries).buildTree(res_col)
+        root = C45.fromTable(arrayOfDictionaries)
+        root.maxDepth = maxDepth
+        a = root.buildTree(res_col)
         print('Count\tPath_Length\tResult\tPredicates', file=file)
         C45.outputDecision(a, res_col, [], file)
 
