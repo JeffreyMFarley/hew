@@ -1,4 +1,7 @@
+import sys
 import math
+import argparse
+import csv
 from hew.node import Node
 from collections import defaultdict
 
@@ -132,7 +135,7 @@ class C45:
     def buildTree(self, res_col):
         tree = Node(self)
 
-        if self.depth >= self.maxDepth:
+        if self.depth > self.maxDepth:
             return tree
 
         gain_list = [(k, self.gain(k, res_col)) 
@@ -172,11 +175,46 @@ class C45:
             _res_col_ must be the name of field that contains the target result
         """
         root = C45.fromTable(arrayOfDictionaries)
+        if res_col not in root.columnSet:
+            print(res_col, 'is not a valid column. Exiting.', file=sys.stderr)
+            return
+
         root.maxDepth = maxDepth
         a = root.buildTree(res_col)
         print('Count\tPath_Length\tResult\tPredicates', file=file)
         C45.outputDecision(a, res_col, [], file)
 
+
+# -----------------------------------------------------------------------------
+# Main
+# -----------------------------------------------------------------------------
+
+def buildArgParser():
+    description = 'Build a decision tree from a table of features'
+    p = argparse.ArgumentParser(description=description)
+    p.add_argument('input', metavar='inputFileName',
+                   help='the file to process')
+    p.add_argument('target',  metavar='targetColumn',
+                   help='the column that holds the expected result')
+    p.add_argument('output', nargs='?', metavar='outputFileName',
+                   default='decision.txt',
+                   help='the name of the file that will hold the results')
+    p.add_argument('--max', nargs='?', action='store', type=int, 
+                   dest='maxDepth', default=20,
+                   help='the maximum depth the features will split')
+
+    return p
+
+if __name__ == '__main__':
+    parser = buildArgParser()
+    args = parser.parse_args()
+
+    with open(args.input, 'r') as f:
+        reader = csv.DictReader(f, dialect=csv.excel_tab)
+        input = [row for row in reader]
+
+    with open(args.output, 'w') as f:
+        C45.makeDecisionTree(input, args.target, f, args.maxDepth)
 
 
 
