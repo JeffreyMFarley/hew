@@ -48,10 +48,10 @@ class Test_C45_test(unittest.TestCase):
         self.assertFalse(self.target.isHomogeneous('arg1'))
 
     def test_get_indexes(self):
-        self.assertEqual(self.target.get_indexes('arg3', 'no'), [0, 3])
-        self.assertEqual(self.target.get_indexes('arg3', 'dunno'), [])
+        self.assertEqual(self.target.get_indexes('arg3', 'no'), {0, 3})
+        self.assertEqual(self.target.get_indexes('arg3', 'dunno'), set())
         self.assertEqual(self.target.get_indexes('arg2', 'down'),
-                         [0, 2, 3])
+                         {0, 2, 3})
 
     def test_get_values(self):
         self.assertEqual(self.target.get_values('arg1', [0, 2, 3]),

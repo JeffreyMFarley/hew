@@ -77,7 +77,7 @@ class C45:
     def get_indexes(self, col, v):
         """ Returns indexes of values _v_ in column _col_.
         """
-        return [i for i,x in enumerate(self.columnSet[col]) if x == v]
+        return {i for i,x in enumerate(self.columnSet[col]) if x == v}
 
     def get_values(self, col, indexes):
         """ Returns values of _indexes_ in column _col_
