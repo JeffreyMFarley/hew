@@ -1,10 +1,11 @@
 import hew
 
-class BKNode():
+class BKNode(dict):
     ''' Implementation of a Burkhard-Keller Tree
     Adapted from https://gist.github.com/Arachnid/491973
     '''
     def __init__(self, term):
+        self.__dict__ = self
         self.term = term
         self.children = {}
       
