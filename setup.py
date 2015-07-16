@@ -6,7 +6,9 @@ setup(name='hew',
       url='https://github.com/JeffreyMFarley/hew',
       author='Jeffrey M Farley',
       author_email='JeffreyMFarley@users.noreply.github.com',
-      license='MIT',
       packages=['hew'],
+      install_requires=[
+          'distance',
+      ],
       test_suite='tests',
       zip_safe=False)

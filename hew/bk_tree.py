@@ -1,4 +1,5 @@
 import hew
+import distance
 
 class BKNode(dict):
     ''' Implementation of a Burkhard-Keller Tree
@@ -10,20 +11,20 @@ class BKNode(dict):
         self.children = {}
       
     def insert(self, other):
-        distance = hew.levenshtein(self.term, other)
-        if distance in self.children:
-            self.children[distance].insert(other)
+        d = distance.levenshtein(self.term, other)
+        if d in self.children:
+            self.children[d].insert(other)
         else:
-            self.children[distance] = BKNode(other)
+            self.children[d] = BKNode(other)
   
     def search(self, term, k, results=None):
         if results is None:
             results = []
-        distance = hew.levenshtein(self.term, term)
+        d = distance.levenshtein(self.term, term)
         counter = 1
-        if distance <= k:
+        if d <= k:
             results.append(self.term)
-        for i in range(max(0, distance - k), distance + k + 1):
+        for i in range(max(0, d - k), d + k + 1):
             child = self.children.get(i)
             if child:
                 counter += child.search(term, k, results)
