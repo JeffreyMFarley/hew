@@ -8,7 +8,7 @@ setup(name='hew',
       author_email='JeffreyMFarley@users.noreply.github.com',
       packages=['hew'],
       install_requires=[
-          'distance',
+          'distance', 'pymonad'
       ],
       test_suite='tests',
       zip_safe=False)
