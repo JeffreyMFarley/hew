@@ -1,3 +1,4 @@
+import cProfile
 import unittest
 import hew
 from unittest.mock import patch
@@ -211,4 +212,9 @@ class Test_Normalizer(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
-    unittest.main()
+    profile = cProfile.Profile()
+    profile.enable()
+    unittest.main(exit=False)
+    profile.disable()
+    profile.print_stats()
+    

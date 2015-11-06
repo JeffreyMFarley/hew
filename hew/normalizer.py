@@ -1,9 +1,11 @@
 ''' Provides a set of normalizing functions
 '''
+import os
 import re
 import sys
 import unicodedata
 import itertools
+import csv
 from pymonad.Reader import *
 from pymonad.List import *
 from pymonad.Maybe import * 
@@ -20,9 +22,11 @@ else:
 def buildRomanizeReplace():
     ''' This table for the `translate` function replaces one character for another 
     '''
-    table = dict.fromkeys(c for c in range(sys.maxunicode)
-                            if unicodedata.combining(_char(c)))
-
+    table = {}
+    for row in acquireUnicode():
+        if row['General_Category'] == 'Mn':
+            table[int(row['CodePoint'], 16)] = None
+        
     # latin extended not handled by decombining
     table[0xd0] = ord('D')      # D bar
     table[0xf0] = ord('d')      # eth
@@ -105,9 +109,12 @@ def buildPunctuationExpand():
 def listAllPunctuation():
     """ Creates the list of all punctuation and symbols"""
     punctCat = ['P', 'S', 'Z']
-    punct = [c
-             for c in range(sys.maxunicode) 
-             if unicodedata.category(_char(c))[0] in punctCat]
+
+    punct = []
+    for row in acquireUnicode():
+        if row['General_Category'][0] in punctCat:
+            punct.append(int(row['CodePoint'], 16))
+   
     return punct
 
 def windowsFileNameReserved():
@@ -122,6 +129,14 @@ def uriReserved():
 #------------------------------------------------------------------------------
 # Generators
 #------------------------------------------------------------------------------
+
+def acquireUnicode():
+    dirName = os.path.dirname(__file__)
+    fileName = os.path.join(dirName, 'UnicodeData.txt')
+    with open(fileName) as f:
+        reader = csv.DictReader(f, delimiter=';')
+        for row in reader:
+            yield row
 
 def tokenize(s):
     for i, x in enumerate(re.split('(\W+)', s)):
@@ -342,4 +357,5 @@ class Normalizer(object):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    pass
+    pass    
+        
