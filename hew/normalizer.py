@@ -49,61 +49,61 @@ def buildRomanizeReplace():
 
 def buildRomanizeExpand():
     table = {}
-    table['\xc5'] = 'Aa'  # ring a
-    table['\xc6'] = 'Ae'  # ligature
-    table['\xde'] = 'Th'  # thorn
-    table['\xdf'] = 'ss'  # sharp s
-    table['\xe5'] = 'aa'  # ring a
-    table['\xe6'] = 'ae'  # ligature
-    table['\xfe'] = 'th'  # thorn
+    table[u'\xc5'] = u'Aa'  # ring a
+    table[u'\xc6'] = u'Ae'  # ligature
+    table[u'\xde'] = u'Th'  # thorn
+    table[u'\xdf'] = u'ss'  # sharp s
+    table[u'\xe5'] = u'aa'  # ring a
+    table[u'\xe6'] = u'ae'  # ligature
+    table[u'\xfe'] = u'th'  # thorn
     return table
 
 def buildPunctuationReplace():
-    table = {0xa6 : '|',
-             0xb4 : '\'',
-             0xb6 : '*',
-             0xd7 : 'x',
+    table = {0xa6 : u'|',
+             0xb4 : u'\'',
+             0xb6 : u'*',
+             0xd7 : u'x',
 
-            0x2022 : '*',   # bullet
-            0x2023 : '*',   
-            0x2024 : '.',   
-            0x2027 : '*',
-            0x2032 : "'",
-            0x2035 : "'",
-            0x2039 : '<',
-            0x203a : '>',
-            0x2043 : '-',
-            0x2044 : '/',
-            0x204e : '*',
-            0x2053 : '~',
-            0x205f : ' ',
+            0x2022 : u'*',   # bullet
+            0x2023 : u'*',   
+            0x2024 : u'.',   
+            0x2027 : u'*',
+            0x2032 : u"'",
+            0x2035 : u"'",
+            0x2039 : u'<',
+            0x203a : u'>',
+            0x2043 : u'-',
+            0x2044 : u'/',
+            0x204e : u'*',
+            0x2053 : u'~',
+            0x205f : u' ',
             }
-    table.update({c :' ' for c in range(0x2000, 0x200a)})
-    table.update({c :'-' for c in range(0x2010, 0x2015)})
-    table.update({c :"'" for c in range(0x2018, 0x201b)})
-    table.update({c :'"' for c in range(0x201c, 0x201f)})
+    table.update({c :u' ' for c in range(0x2000, 0x200a)})
+    table.update({c :u'-' for c in range(0x2010, 0x2015)})
+    table.update({c :u"'" for c in range(0x2018, 0x201b)})
+    table.update({c :u'"' for c in range(0x201c, 0x201f)})
 
     return table
 
 def buildPunctuationExpand():
-    return {'\xa9' : '(C)',
-            '\xab' : '<<',
-            '\xbb' : '>>',
-            '\xae' : '(R)',
-            '\xbc' : '1/4',
-            '\xbd' : '1/2',
-            '\xbe' : '3/4',
-            '\x2025' : '..',
-            '\x2026' : '...',
-            '\x2033' : "''",
-            '\x2034' : "'''",
-            '\x2036' : "''",
-            '\x2037' : "'''",
-            '\x203c' : "!!",
-            '\x2047' : "??",
-            '\x2048' : "?!",
-            '\x2049' : "!?",
-            '\x2057' : "''''",
+    return {u'\xa9' : u'(C)',
+            u'\xab' : u'<<',
+            u'\xbb' : u'>>',
+            u'\xae' : u'(R)',
+            u'\xbc' : u'1/4',
+            u'\xbd' : u'1/2',
+            u'\xbe' : u'3/4',
+            u'\u2025' : u'..',
+            u'\u2026' : u'...',
+            u'\u2033' : u"''",
+            u'\u2034' : u"'''",
+            u'\u2036' : u"''",
+            u'\u2037' : u"'''",
+            u'\u203c' : u"!!",
+            u'\u2047' : u"??",
+            u'\u2048' : u"?!",
+            u'\u2049' : u"!?",
+            u'\u2057' : u"''''",
             }
 
 def listAllPunctuation():
@@ -119,7 +119,7 @@ def listAllPunctuation():
 
 def windowsFileNameReserved():
     reserved = ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']
-    return {ord(c):'_' for c in reserved}
+    return {ord(c):u'_' for c in reserved}
 
 def uriReserved():
     reserved =  ['!', '#', '$', '&', "'", '(', ')', '*', '+', ',', '/', ':', 
@@ -139,7 +139,7 @@ def acquireUnicode():
             yield row
 
 def tokenize(s):
-    for i, x in enumerate(re.split('(\W+)', s)):
+    for i, x in enumerate(re.split('(\W+)', s, flags=re.UNICODE)):
         if i % 2 == 0:
             if x:
                 yield x
@@ -197,8 +197,8 @@ def expandCharacters(table, s):
 
 class Normalizer(object):
     def __init__(self):
-        self.tokenReplace = {'&': 'and', '+': 'and'}
-        self.tokenIgnore = ['the', 'a', 'an']
+        self.tokenReplace = {u'&': u'and', u'+': u'and'}
+        self.tokenIgnore = [u'the', u'a', u'an']
         self.tokenExpand = {}
         self.charExpand = {}
         self.charReplace = {}
