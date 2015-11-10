@@ -3,9 +3,8 @@ import sys
 import math
 import argparse
 import csv
-from hew.node import Node
+from hew.structures.node import Node
 from collections import defaultdict
-
 
 class C45:
     """

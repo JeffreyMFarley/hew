@@ -1,5 +1,5 @@
 import unittest
-import hew.c45 as sut
+import hew.classifiers.c45 as sut
 import sys
 
 class Test_C45_test(unittest.TestCase):

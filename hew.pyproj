@@ -15,10 +15,10 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
-    <Compile Include="hew\bk_tree.py" />
-    <Compile Include="hew\c45.py" />
-    <Compile Include="hew\node.py" />
+    <Compile Include="hew\classifiers\c45.py" />
     <Compile Include="hew\normalizer.py" />
+    <Compile Include="hew\structures\bk_tree.py" />
+    <Compile Include="hew\structures\node.py" />
     <Compile Include="setup.py" />
     <Compile Include="hew\__init__.py" />
     <Compile Include="tests\c45_test.py" />
@@ -28,6 +28,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="hew" />
+    <Folder Include="hew\classifiers\" />
+    <Folder Include="hew\clusters\" />
+    <Folder Include="hew\structures\" />
     <Folder Include="tests" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
