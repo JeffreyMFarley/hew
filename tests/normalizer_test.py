@@ -148,8 +148,8 @@ class Test_Normalizer(unittest.TestCase):
 
     @patch('hew.normalizer.windowsFileNameReserved', wraps=hew.normalizer.windowsFileNameReserved)
     def test_windows_file_list(self, map):
-        data = '***Is <\xde\xef\u015d> a filename?'
-        expected = 'Is _\xde\xef\u015d_ a filename'
+        data = u'***Is <\xde\xef\u015d> a filename?'
+        expected = u'Is _\xde\xef\u015d_ a filename'
         for i in range(4):
             actual = self.target.for_windows_file(data)
             self.assertEqual(expected, actual)

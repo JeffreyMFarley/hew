@@ -16,9 +16,15 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
     <Compile Include="hew\classifiers\c45.py" />
+    <Compile Include="hew\classifiers\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="hew\normalizer.py" />
     <Compile Include="hew\structures\bk_tree.py" />
     <Compile Include="hew\structures\node.py" />
+    <Compile Include="hew\structures\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="setup.py" />
     <Compile Include="hew\__init__.py" />
     <Compile Include="tests\c45_test.py" />
