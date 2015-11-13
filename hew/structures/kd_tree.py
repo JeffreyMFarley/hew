@@ -1,6 +1,4 @@
-import sys
 import collections
-import itertools
 import math
 
 try:
@@ -8,12 +6,10 @@ try:
 except ImportError:  #python3.x
     izip = zip
 
-if sys.version >= '3':
-    xrange = range
-
 # -----------------------------------------------------------------------------
-
-# Inspiration: http://code.activestate.com/recipes/577497-kd-tree-for-nearest-neighbor-search-in-a-k-dimensi/
+# Adapted from: 
+# http://code.activestate.com/recipes/577497-kd-tree-for-nearest-neighbor-search-in-a-k-dimensi/
+# -----------------------------------------------------------------------------
 
 def square_distance(a, b):
     s = 0
@@ -22,24 +18,24 @@ def square_distance(a, b):
         s += d * d
     return s
 
-Node = collections.namedtuple("Node", 'point axis label left right')
+# -----------------------------------------------------------------------------
+
+KDNode = collections.namedtuple("KDNode", 'point axis label left right')
 
 class KDTree(object):
-    """
-    A tree for nearest neighbor search in a k-dimensional space.
+    """A tree for nearest neighbor search in a k-dimensional space."""
 
-    For information about the implementation, see
-    http://en.wikipedia.org/wiki/Kd-tree
+    # -------------------------------------------------------------------------
+    # Initializer
+    # -------------------------------------------------------------------------
+    def __init__(self, objects):
+        """`objects` is an iterable of (vector, label) tuples"""
 
-    Usage:
-    objects is an iterable of (point, label) tuples
-    k is the number of dimensions
-    
-    t = KDTree(k, objects)
-    point, label, distance = t.nearest_neighbor(destination)
-    """
+        a = list(objects)
+        assert len(a) > 0
+        assert len(a[0]) == 2
 
-    def __init__(self, k, objects=[]):
+        self.k = len(a[0][0])
 
         def build_tree(objects, axis=0):
 
@@ -50,15 +46,28 @@ class KDTree(object):
             median_idx = len(objects) // 2
             median_point, median_label = objects[median_idx]
 
-            next_axis = (axis + 1) % k
-            return Node(median_point, axis, median_label,
+            next_axis = (axis + 1) % self.k
+            return KDNode(median_point, axis, median_label,
                         build_tree(objects[:median_idx], next_axis),
                         build_tree(objects[median_idx + 1:], next_axis))
 
-        self.root = build_tree(list(objects))
+        self.root = build_tree(a)
 
+    # -------------------------------------------------------------------------
+    # Public Methods
+    # -------------------------------------------------------------------------
+    
+    @classmethod
+    def fromTable(cls, arrayOfDictionaries, pointFields, labelFields):
+        return []
 
     def nearest_neighbor(self, destination):
+        """`destination` is a vector of length `k`
+
+        Returns:
+            (closest point, closest label, distance)
+        """
+        assert len(destination) == self.k
 
         best = [None, None, float('inf')]
         # state of search: best point found, its label,
@@ -85,23 +94,4 @@ class KDTree(object):
         return best[0], best[1], math.sqrt(best[2])
 
 if __name__ == '__main__':
-
-    from random import random
-    
-    k = 5
-    npoints = 1000
-    lookups = 1000
-    eps = 1e-8
-    
-    points = [(tuple(random() for _ in xrange(k)), i)
-              for i in xrange(npoints)]
-
-    tree = KDTree(k, points)
-
-    for _ in xrange(lookups):
-        
-        destination = [random() for _ in xrange(k)]
-        _, _, mindistance = tree.nearest_neighbor(destination)
-        
-        minsq = min(square_distance(p, destination) for p, _ in points)
-        assert abs(math.sqrt(minsq) - mindistance) < eps
+    pass

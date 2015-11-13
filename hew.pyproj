@@ -30,6 +30,7 @@
     <Compile Include="hew\__init__.py" />
     <Compile Include="tests\c45_test.py" />
     <Compile Include="tests\bk_tree_test.py" />
+    <Compile Include="tests\kd_tree_test.py" />
     <Compile Include="tests\normalizer_test.py" />
     <Compile Include="tests\__init__.py" />
   </ItemGroup>
