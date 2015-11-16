@@ -59,7 +59,14 @@ class KDTree(object):
     
     @classmethod
     def fromTable(cls, arrayOfDictionaries, pointFields, labelFields):
-        return []
+        """ Builds a k-d tree from a tabular structure """
+        pairs = []
+        for o in arrayOfDictionaries:
+            points = [o[f] if f in o else 0. for f in pointFields]
+            labels = [o[f] if f in o else '' for f in labelFields]
+            pairs.append((points, labels))
+
+        return KDTree(pairs)
 
     def nearest_neighbor(self, destination):
         """`destination` is a vector of length `k`

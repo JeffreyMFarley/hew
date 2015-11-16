@@ -28,5 +28,22 @@ class Test_KDTree(unittest.TestCase):
             minsq = min(square_distance(p, destination) for p, _ in points)
             self.assertLess(abs(math.sqrt(minsq) - mindistance), eps)
 
+
+    def test_fromTable(self):
+        table = [
+                 {'x': 0.3, 'y': 0.4, 'z': 0.5, 'name': 'foo', 'desc': 'bar'}, 
+                 {'x': 0.5, 'z': 0.9, 'name': 'baz', 'desc': 'qaz'}, 
+                 {'x': 0.2, 'y': 0.8, 'z': 0.2, 'desc': 'den'}, 
+                ]
+        
+        tree = KDTree.fromTable(table, ['x', 'y', 'z'], ['name', 'desc'])
+        points, labels, distance = tree.nearest_neighbor([0.1, 1, 0.1])
+        self.assertEqual(points[0], 0.2)
+        self.assertEqual(points[1], 0.8)
+        self.assertEqual(points[2], 0.2)
+        self.assertEqual(labels[0], '')
+        self.assertEqual(labels[1], 'den')
+        self.assertTrue(0.2 < distance < 0.25)
+
 if __name__ == '__main__':
     unittest.main()
