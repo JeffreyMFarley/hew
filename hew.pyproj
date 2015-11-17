@@ -19,6 +19,8 @@
     <Compile Include="hew\classifiers\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="hew\clusters\k_means.py" />
+    <Compile Include="hew\clusters\__init__.py" />
     <Compile Include="hew\normalizer.py" />
     <Compile Include="hew\structures\bk_tree.py" />
     <Compile Include="hew\structures\kd_tree.py" />
