@@ -12,34 +12,49 @@ if sys.version >= '3':
 # and
 # https://gist.github.com/larsmans/4952848
 #
-# mu :: the center point of a centroid
-# X  :: a set of N points
-# K  :: number of clusters
+# mu :: the center point of a cluster
+# MU :: array of center points
+# X  :: a set of n points
+# x  :: a point vector
+# k  :: number of clusters
+# d  :: number of dimensions
 
-def random_point(axes=2):
-    return tuple([random.uniform(-1, 1) for _ in range(axes)])
+def random_point(d=2):
+    return tuple([random.uniform(-1, 1) for _ in range(d)])
 
 # -----------------------------------------------------------------------------
 # () -> X
 # -----------------------------------------------------------------------------
 
-def init_board(N, axes=2):
-    return [random_point(axes) for i in range(N)]
+def init_board(n, d=2):
+    return [random_point(d) for i in range(n)]
 
-def init_board_gauss(N, k, axes=2):
-    n = N // k
+def init_board_gauss(n, k, d=2):
+    n0 = n // k
     X = []
     for i in range(k):
-        c = random_point(axes)
-        s = random.uniform(0.05,0.33)
-        for _ in range(n):
-            point = tuple([random.gauss(c[axis],s) for axis in range(axes)])
-            X.append(point)
+        MU = random_point(d)
+        sigma = random.uniform(0.05,0.33)
+        for _ in range(n0):
+            x = tuple([random.gauss(MU[axis],sigma) for axis in range(d)])
+            X.append(x)
     return X
 
 # -----------------------------------------------------------------------------
 # X -> ...
 # -----------------------------------------------------------------------------
+
+def mean(X):
+    """ Centroid of the vectors """
+    d = len(X[0])
+    c = [0.] * d
+    n = len(X)
+    for x in X:
+        for i, v in enumerate(x):
+            c[i] += v
+    for i in xrange(d):
+        c[i] /= n
+    return c
 
 def bounding_box(X):
     xmin, xmax = min(X,key=lambda a:a[0])[0], max(X,key=lambda a:a[0])[0]
@@ -86,24 +101,12 @@ def cluster_points(X, mu):
             clusters[bestmukey] = [x]
     return clusters
  
-def find_centers(X, K):
-    # Initialize to K random centers
-    oldmu = random.sample(X, K)
-    mu = random.sample(X, K)
-    while not has_converged(mu, oldmu):
-        oldmu = mu
-        # Assign all points in X to clusters
-        clusters = cluster_points(X, mu)
-        # Reevaluate centers
-        mu = reevaluate_centers(oldmu, clusters)
-    return(mu, clusters)
-
 # -----------------------------------------------------------------------------
 # mu -> ...
 # -----------------------------------------------------------------------------
 
-def has_converged(mu_1, mu_0):
-    return set([tuple(a) for a in mu_1]) == set([tuple(a) for a in mu_0])
+def has_converged(A, B):
+    return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
  
 def reevaluate_centers(mu, clusters):
     newmu = []
@@ -122,37 +125,29 @@ def Wk(mu, clusters):
 # Main
 # -----------------------------------------------------------------------------
 
-def mean(xs):
-    """Mean (as a dense vector) of a set of sparse vectors of length l."""
-    l = len(xs)
-    c = [0.] * l
-    n = 0
-    for x in xs:
-        for i, v in x:
-            c[i] += v
-        n += 1
-    for i in xrange(l):
-        c[i] /= n
-    return c
-
-def kmeans(k, X, n_iter=10):
+def kmeans(X, k):
     # Initialize from random points.
     l = len(X)
-    centers = [X[i] for i in random.sample(xrange(l), k)]
-    cluster = [None] * l
+    MU = [X[i] for i in random.sample(xrange(l), k)]
+    B = [X[i] for i in random.sample(xrange(l), k)]
+    clusters = [None] * l
 
-    for _ in xrange(n_iter):
+    while not has_converged(MU, B):
+        print('.')
+        B = list(MU)
         for i, x in enumerate(X):
-            cluster[i] = min(xrange(k), key=lambda j: dist(x, centers[j]))
-        for j, c in enumerate(centers):
-            members = (x for i, x in enumerate(X) if cluster[i] == j)
-            centers[j] = mean(members, l)
+            clusters[i] = min(xrange(k), key=lambda j: dist(x, MU[j]))
+        for j, mu in enumerate(MU):
+            members = [x for i, x in enumerate(X) if clusters[i] == j]
+            MU[j] = mean(members)
 
-    return cluster
+    return MU, clusters
 
 if __name__ == '__main__':
-    X = init_board_gauss(200,3, 6)
-    c = kmeans(3, X)
+    X = init_board_gauss(2000,6, 6)
+    c = kmeans(X, 6)
+
+    print(c)
 
     #ks, logWks, logWkbs, sk = gap_statistic(X)
     #print(ks, logWks, logWkbs, sk)
