@@ -3,7 +3,7 @@ import unittest
 import math
 from random import random
 from hew import KDTree
-from hew.structures.kd_tree import square_distance
+from hew.structures.math import Vector
 
 if sys.version >= '3':
     xrange = range
@@ -25,7 +25,8 @@ class Test_KDTree(unittest.TestCase):
             destination = [random() for _ in xrange(k)]
             _, _, mindistance = tree.nearest_neighbor(destination)
         
-            minsq = min(square_distance(p, destination) for p, _ in points)
+            minsq = min(Vector.square_distance(p, destination) 
+                        for p, _ in points)
             self.assertLess(abs(math.sqrt(minsq) - mindistance), eps)
 
 

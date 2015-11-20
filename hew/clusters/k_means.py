@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import random
 import collections
-from hew.structures.kd_tree import square_distance as dist
+from hew.structures.math import Vector
 
 if sys.version >= '3':
     xrange = range
@@ -44,23 +44,6 @@ def init_board_gauss(n, k, d=2):
 # X -> ...
 # -----------------------------------------------------------------------------
 
-def mean(X):
-    """ Centroid of the vectors """
-    d = len(X[0])
-    c = [0.] * d
-    n = len(X)
-    for x in X:
-        for i, v in enumerate(x):
-            c[i] += v
-    for i in xrange(d):
-        c[i] /= n
-    return c
-
-def bounding_box(X):
-    xmin, xmax = min(X,key=lambda a:a[0])[0], max(X,key=lambda a:a[0])[0]
-    ymin, ymax = min(X,key=lambda a:a[1])[1], max(X,key=lambda a:a[1])[1]
-    return (xmin,xmax), (ymin,ymax)
- 
 def gap_statistic(X):
     (xmin,xmax), (ymin,ymax) = bounding_box(X)
     # Dispersion for real distribution
@@ -136,10 +119,11 @@ def kmeans(X, k):
         print('.')
         B = list(MU)
         for i, x in enumerate(X):
-            clusters[i] = min(xrange(k), key=lambda j: dist(x, MU[j]))
+            clusters[i] = min(xrange(k), 
+                              key=lambda j: Vector.square_distance(x, MU[j]))
         for j, mu in enumerate(MU):
             members = [x for i, x in enumerate(X) if clusters[i] == j]
-            MU[j] = mean(members)
+            MU[j] = Vector.mean(members)
 
     return MU, clusters
 
@@ -148,6 +132,8 @@ if __name__ == '__main__':
     c = kmeans(X, 6)
 
     print(c)
+
+    print(Vector.bounds(X))
 
     #ks, logWks, logWkbs, sk = gap_statistic(X)
     #print(ks, logWks, logWkbs, sk)

@@ -1,23 +1,10 @@
 import collections
 import math
-
-try:
-    from itertools import izip
-except ImportError:  #python3.x
-    izip = zip
+from hew.structures.math import Vector
 
 # -----------------------------------------------------------------------------
 # Adapted from: 
 # http://code.activestate.com/recipes/577497-kd-tree-for-nearest-neighbor-search-in-a-k-dimensi/
-# -----------------------------------------------------------------------------
-
-def square_distance(a, b):
-    s = 0
-    for x, y in izip(a, b):
-        d = x - y
-        s += d * d
-    return s
-
 # -----------------------------------------------------------------------------
 
 KDNode = collections.namedtuple("KDNode", 'point axis label left right')
@@ -86,7 +73,7 @@ class KDTree(object):
                 return
             point, axis, label, left, right = here
 
-            here_sd = square_distance(point, destination)
+            here_sd = Vector.square_distance(point, destination)
             if here_sd < best[2]:
                 best[:] = point, label, here_sd
 
