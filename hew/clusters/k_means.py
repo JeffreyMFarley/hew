@@ -1,5 +1,5 @@
 import sys
-import numpy as np
+#import numpy as np
 import random
 from hew.structures.math import Vector
 
