@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 import random
-import collections
 from hew.structures.math import Vector
 
 if sys.version >= '3':
@@ -19,29 +18,8 @@ if sys.version >= '3':
 # k  :: number of clusters
 # d  :: number of dimensions
 
-def random_point(d=2):
-    return tuple([random.uniform(-1, 1) for _ in range(d)])
-
 # -----------------------------------------------------------------------------
-# () -> X
-# -----------------------------------------------------------------------------
-
-def init_board(n, d=2):
-    return [random_point(d) for i in range(n)]
-
-def init_board_gauss(n, k, d=2):
-    n0 = n // k
-    X = []
-    for i in range(k):
-        MU = random_point(d)
-        sigma = random.uniform(0.05,0.33)
-        for _ in range(n0):
-            x = tuple([random.gauss(MU[axis],sigma) for axis in range(d)])
-            X.append(x)
-    return X
-
-# -----------------------------------------------------------------------------
-# X -> ...
+# Use later... find optimal cluster Number
 # -----------------------------------------------------------------------------
 
 def gap_statistic(X):
@@ -70,34 +48,6 @@ def gap_statistic(X):
     sk = sk*np.sqrt(1+1/B)
     return(ks, Wks, Wkbs, sk)
 
-def cluster_points(X, mu):
-    clusters  = {}
-    for x in X:
-        bestmukey = min([
-                         (i[0], np.linalg.norm(x-mu[i[0]]))
-                         for i in enumerate(mu)
-                        ], 
-                        key=lambda t:t[1])[0]
-        try:
-            clusters[bestmukey].append(x)
-        except KeyError:
-            clusters[bestmukey] = [x]
-    return clusters
- 
-# -----------------------------------------------------------------------------
-# mu -> ...
-# -----------------------------------------------------------------------------
-
-def has_converged(A, B):
-    return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
- 
-def reevaluate_centers(mu, clusters):
-    newmu = []
-    keys = sorted(clusters.keys())
-    for k in keys:
-        newmu.append(np.mean(clusters[k], axis = 0))
-    return newmu
- 
 def Wk(mu, clusters):
     K = len(mu)
     return sum([np.linalg.norm(mu[i]-c)**2/(2*len(c))
@@ -105,35 +55,70 @@ def Wk(mu, clusters):
                 for c in clusters[i]])
 
 # -----------------------------------------------------------------------------
+
+def has_converged(A, B):
+    return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
+ 
+class KMeans:
+    # -------------------------------------------------------------------------
+    # Factory Methods
+    # -------------------------------------------------------------------------
+    @classmethod
+    def fromTable(cls, k, arrayOfDictionaries, vectorFields, labelFields=[]):
+        """ Initializes a k-means instance from a tabular structure """
+        for o in arrayOfDictionaries:
+            vectors = [float(o[f]) if f in o else 0. for f in vectorFields]
+            labels = [o[f] if f in o else '' for f in labelFields]
+
+        return KMeans(k, vectors, labels)
+
+    # -------------------------------------------------------------------------
+    # Customization Methods
+    # -------------------------------------------------------------------------
+    def __init__(self, k, vectors, labels=None):
+        assert len(vectors) > 0
+        if labels:
+            assert len(vectors) == len(labels)
+
+        def lloyds_algorithm(X, k):
+            # Initialize from random points.
+            l = len(X)
+            MU = random.sample(set(X), k)
+            C = [None] * l
+            iterations = 0
+            done = False
+
+            while not done:
+                old = list(MU)
+                iterations += 1
+
+                for i, x in enumerate(X):
+                    C[i] = min(xrange(k), 
+                               key=lambda j: Vector.square_distance(x, MU[j]))
+                for j, mu in enumerate(MU):
+                    members = [x for i, x in enumerate(X) if C[i] == j]
+                    MU[j] = Vector.mean(members)
+
+                done = has_converged(MU, old)
+
+            return MU, C, iterations
+
+        self.vectors = vectors
+        self.labels = labels
+        self.k = k
+        self.d = len(vectors[0])
+        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, k)
+
+    def __len__(self):
+        return len(self.clusterIndex)
+
+    def __iter__(self):
+        for c in self.clusterIndex:
+            yield c
+
+# -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 
-def kmeans(X, k):
-    # Initialize from random points.
-    l = len(X)
-    MU = [X[i] for i in random.sample(xrange(l), k)]
-    B = [X[i] for i in random.sample(xrange(l), k)]
-    clusters = [None] * l
-
-    while not has_converged(MU, B):
-        print('.')
-        B = list(MU)
-        for i, x in enumerate(X):
-            clusters[i] = min(xrange(k), 
-                              key=lambda j: Vector.square_distance(x, MU[j]))
-        for j, mu in enumerate(MU):
-            members = [x for i, x in enumerate(X) if clusters[i] == j]
-            MU[j] = Vector.mean(members)
-
-    return MU, clusters
-
 if __name__ == '__main__':
-    X = init_board_gauss(2000,6, 6)
-    c = kmeans(X, 6)
-
-    print(c)
-
-    print(Vector.bounds(X))
-
-    #ks, logWks, logWkbs, sk = gap_statistic(X)
-    #print(ks, logWks, logWkbs, sk)
+    pass
