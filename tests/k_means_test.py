@@ -1,5 +1,6 @@
 import unittest
 import random
+import collections
 from hew import KMeans
 
 def random_point(d=2):
@@ -25,6 +26,23 @@ class Test_k_means(unittest.TestCase):
         target = KMeans(6, X)
         self.assertEqual(len(X), len(target))
         self.assertEqual(6, target.k)
+
+    def test_tooManyRequestedClusters(self):
+        X = [(0, 0, 1)] * 12
+        with self.assertRaises(ValueError):
+            target = KMeans(2, X)
+
+    @unittest.skip('used for debugging command line')
+    def test_commandLine(self):
+        args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
+        args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_in.txt'
+        args.clusters = 10
+        args.resultColumn = 'Cluster'
+        args.outputFileName = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_clustered.txt'
+        args.fields = ['energy','n_bpm']
+        #args.fields = ['acousticness','danceability','energy','instrumentalness',
+        #               'liveness','speechiness','valence', 'n_bpm']
+        KMeans.run(args)
 
 if __name__ == '__main__':
     unittest.main()

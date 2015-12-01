@@ -29,6 +29,7 @@
     <Compile Include="hew\structures\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="hew\__main__.py" />
     <Compile Include="setup.py" />
     <Compile Include="hew\__init__.py" />
     <Compile Include="tests\c45_test.py" />

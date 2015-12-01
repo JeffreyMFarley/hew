@@ -1,11 +1,34 @@
+import os
 import sys
+import csv
 #import numpy as np
 import random
+import argparse
 from hew.structures.math import Vector
+
+try:
+    from itertools import izip
+except ImportError:  #python3.x
+    izip = zip
 
 if sys.version >= '3':
     xrange = range
 
+# -----------------------------------------------------------------------------
+# obj -> obj
+# -----------------------------------------------------------------------------
+
+def convertBooleanFields(o):
+    for k,v in o.items():
+        if v.lower() == 'false':
+            o[k] = 0.
+        elif v.lower() == 'true':
+            o[k] = 1.
+        else:
+            o[k] = v
+    return o
+
+# -----------------------------------------------------------------------------
 # Adapted from 
 # https://datasciencelab.wordpress.com/2013/12/12/clustering-with-k-means-in-python/
 # and
@@ -64,21 +87,21 @@ class KMeans:
     # Factory Methods
     # -------------------------------------------------------------------------
     @classmethod
-    def fromTable(cls, k, arrayOfDictionaries, vectorFields, labelFields=[]):
+    def fromTable(cls, k, arrayOfDictionaries, vectorFields):
         """ Initializes a k-means instance from a tabular structure """
+        vectors = []
         for o in arrayOfDictionaries:
-            vectors = [float(o[f]) if f in o else 0. for f in vectorFields]
-            labels = [o[f] if f in o else '' for f in labelFields]
+            vectors.append(tuple([float(o[f]) 
+                                  if f in o else 0. 
+                                  for f in vectorFields]))
 
-        return KMeans(k, vectors, labels)
+        return KMeans(k, vectors)
 
     # -------------------------------------------------------------------------
     # Customization Methods
     # -------------------------------------------------------------------------
-    def __init__(self, k, vectors, labels=None):
+    def __init__(self, k, vectors):
         assert len(vectors) > 0
-        if labels:
-            assert len(vectors) == len(labels)
 
         def lloyds_algorithm(X, k):
             # Initialize from random points.
@@ -104,7 +127,6 @@ class KMeans:
             return MU, C, iterations
 
         self.vectors = vectors
-        self.labels = labels
         self.k = k
         self.d = len(vectors[0])
         self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, k)
@@ -116,9 +138,52 @@ class KMeans:
         for c in self.clusterIndex:
             yield c
 
+    # -------------------------------------------------------------------------
+    # Useful Methods
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def run(cls, args):
+        with open(args.input, 'r') as f:
+            reader = csv.DictReader(f, dialect=csv.excel_tab)
+            out_cols = reader.fieldnames
+            input = [convertBooleanFields(row) for row in reader]
+
+        k_means = KMeans.fromTable(args.clusters, input, args.fields)
+
+        with open(args.outputFileName, 'w') as f:
+            cells = list(out_cols)
+            cells.append(args.resultColumn)
+            print('\t'.join(cells), file=f)
+
+            for orig, cluster in izip(input, k_means):
+                cells = [str(orig[x]) for x in out_cols]
+                cells.append(str(cluster + 1))
+                print('\t'.join(cells), file=f)
+
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 
+def buildArgParser():
+    description = 'Determine clusters from a table of features'
+    p = argparse.ArgumentParser(description=description)
+    p.add_argument('input', metavar='inputFileName',
+                   help='the file to process')
+    p.add_argument('-c', '--clusters', metavar='clusters',
+                   default=6,
+                   help='the number of clusters')
+    p.add_argument('-r', '--results', metavar='resultColumn',
+                   default='cluster',
+                   help='the column that holds the result')
+    p.add_argument('-o', '--output', metavar='outputFileName',
+                   default='clusters.txt',
+                   help='the name of the file that will hold the results')
+    p.add_argument('fields', metavar='fields', nargs='+',
+                   help='the value columns')
+    return p
+
 if __name__ == '__main__':
-    pass
+    parser = buildArgParser()
+    args = parser.parse_args()
+    KMeans.run(args)
