@@ -71,12 +71,6 @@ def gap_statistic(X):
     sk = sk*np.sqrt(1+1/B)
     return(ks, Wks, Wkbs, sk)
 
-def Wk(mu, clusters):
-    K = len(mu)
-    return sum([np.linalg.norm(mu[i]-c)**2/(2*len(c))
-                for i in range(K) 
-                for c in clusters[i]])
-
 # -----------------------------------------------------------------------------
 
 def has_converged(A, B):
@@ -130,6 +124,7 @@ class KMeans:
         self.k = k
         self.d = len(vectors[0])
         self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, k)
+        self.C = None
 
     def __len__(self):
         return len(self.clusterIndex)
@@ -137,6 +132,24 @@ class KMeans:
     def __iter__(self):
         for c in self.clusterIndex:
             yield c
+
+    @property
+    def Wk(self):
+        """ A measure of the compactness of clustering """
+        C = self.groups
+        coeff = [1/(2*len(C[i])) for i in xrange(self.k)]
+
+        return sum([Vector.square_distance(self.MU[i], c) * coeff[i]
+                    for i in range(self.k) 
+                    for c in C[i]])
+
+    @property
+    def groups(self):
+        if not self.C:
+            self.C = [[] for _ in xrange(self.k)]
+            for i, cluster_i in enumerate(self.clusterIndex):
+                self.C[cluster_i].append(self.vectors[i])
+        return self.C
 
     # -------------------------------------------------------------------------
     # Useful Methods
