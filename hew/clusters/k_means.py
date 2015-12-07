@@ -4,7 +4,7 @@ import csv
 #import numpy as np
 import random
 import argparse
-from hew.structures.math import Vector
+from hew.structures.math import Vector, MonteCarlo
 
 try:
     from itertools import izip
@@ -42,34 +42,53 @@ def convertBooleanFields(o):
 # d  :: number of dimensions
 
 # -----------------------------------------------------------------------------
-# Use later... find optimal cluster Number
+# Optimal cluster
 # -----------------------------------------------------------------------------
 
-def gap_statistic(X):
-    (xmin,xmax), (ymin,ymax) = bounding_box(X)
-    # Dispersion for real distribution
-    ks = range(1,10)
-    Wks = np.zeros(len(ks))
-    Wkbs = np.zeros(len(ks))
-    sk = np.zeros(len(ks))
-    for indk, k in enumerate(ks):
-        mu, clusters = find_centers(X,k)
-        Wks[indk] = np.log(Wk(mu, clusters))
-        # Create B reference datasets
-        B = 10
-        BWkbs = np.zeros(B)
-        for i in range(B):
-            Xb = []
-            for n in range(len(X)):
-                Xb.append([random.uniform(xmin,xmax),
-                          random.uniform(ymin,ymax)])
-            Xb = np.array(Xb)
-            mu, clusters = find_centers(Xb,k)
-            BWkbs[i] = np.log(Wk(mu, clusters))
-        Wkbs[indk] = sum(BWkbs)/B
-        sk[indk] = np.sqrt(sum((BWkbs-Wkbs[indk])**2)/B)
-    sk = sk*np.sqrt(1+1/B)
-    return(ks, Wks, Wkbs, sk)
+# https://datasciencelab.wordpress.com/2013/12/27/finding-the-k-in-k-means-clustering/
+def optimal_clusters(vectors, max_k=10, samples=10):
+    """ `vectors` is the input array of points to test
+    `max_k` is the maximum number of clusters to test for
+    `samples` is the number of monte carlo simulations to run at each cluster step
+    """
+    from hew.structures.math import RunningStatistics
+    import math
+
+    mins, maxs = Vector.bounds(vectors)
+    B_Generator = MonteCarlo(mins, maxs)
+    nX = len(vectors)
+
+    Gap = [0.] * (max_k + 1)
+    SSD = [0.] * (max_k + 1)
+    WK0 = [0.] * (max_k + 1)
+    WKB = [0.] * (max_k + 1)
+
+    print('Checking for optimal cluster size', file=sys.stderr)
+
+    for k in range(1, max_k + 1):
+        c = KMeans(k, vectors)
+        print('  ', k, file=sys.stderr)
+
+        s = RunningStatistics()
+        for _ in range(samples):
+            B = list(B_Generator.xrange(nX))
+            b = KMeans(k, B)
+            s += math.log(b.Wk)
+
+        WK0[k] = math.log(c.Wk)
+        WKB[k] = s.mean
+        SSD[k] = s.standard_deviation * math.sqrt(1 + 1/s.count)
+        Gap[k] = s.mean - WK0[k]
+
+    opt_k = None
+    for k in range(1, max_k - 1):
+        next = Gap[k+1] - SSD[k+1]
+        delta = Gap[k] - next
+        if delta > 0 and not opt_k:
+            opt_k = k
+        #print(k, WK0[k], WKB[k], Gap[k], next, delta)
+    
+    return opt_k
 
 # -----------------------------------------------------------------------------
 
@@ -88,6 +107,9 @@ class KMeans:
             vectors.append(tuple([float(o[f]) 
                                   if f in o else 0. 
                                   for f in vectorFields]))
+
+        if k == -1:
+            k = optimal_clusters(vectors)
 
         return KMeans(k, vectors)
 
@@ -139,7 +161,7 @@ class KMeans:
         C = self.groups
         coeff = [1/(2*len(C[i])) for i in xrange(self.k)]
 
-        return sum([Vector.square_distance(self.MU[i], c) * coeff[i]
+        return sum([Vector.square_distance(self.MU[i], c) # * coeff[i]
                     for i in range(self.k) 
                     for c in C[i]])
 
@@ -184,7 +206,7 @@ def buildArgParser():
     p.add_argument('input', metavar='inputFileName',
                    help='the file to process')
     p.add_argument('-c', '--clusters', metavar='clusters',
-                   default=6,
+                   default=-1,
                    help='the number of clusters')
     p.add_argument('-r', '--results', metavar='resultColumn',
                    default='cluster',

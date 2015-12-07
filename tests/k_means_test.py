@@ -6,9 +6,6 @@ from hew import KMeans
 def random_point(d=2):
     return tuple([random.uniform(-1, 1) for _ in range(d)])
 
-def init_board(n, d=2):
-    return [random_point(d) for i in range(n)]
-
 def init_board_gauss(n, k, d=2):
     n0 = n // k
     X = []
@@ -33,62 +30,34 @@ class Test_k_means(unittest.TestCase):
             target = KMeans(2, X)
 
     def test_Wk(self):
-        from hew.structures.math import Vector, MonteCarlo, RunningStatistics
-        import math
+        from hew.clusters.k_means import optimal_clusters
 
-        def gen_X():
-            MU = [(-0.5, -0.5), (0.5, 0.5), (-0.5, 0.5), (0.5, -0.5)]
-            n = 200
-            k = len(MU)
-            d = len(MU[0])
-            sigma = 0.15
+        MU = [(-0.5, -0.5), (0.5, 0.5), (-0.5, 0.5), (0.5, -0.5)]
+        n = 200
+        k = len(MU)
+        d = len(MU[0])
+        sigma = 0.1
 
-            n0 = n // k
-            X = []
-            for i, mu in enumerate(MU):
-                for _ in range(n0):
-                    x = tuple([random.gauss(mu[axis],sigma) 
-                               for axis in range(d)])
-                    X.append(x)
-            return X
+        n0 = n // k
+        X = []
+        for i, mu in enumerate(MU):
+            for _ in range(n0):
+                x = tuple([random.gauss(mu[axis],sigma) 
+                            for axis in range(d)])
+                X.append(x)
 
-        X = gen_X()
-        mins, maxs = Vector.bounds(X)
-        B_Generator = MonteCarlo(mins, maxs)
-
-        samples = 10
-        nX = len(X)
-        max_k = 10
-
-        G = [0.] * max_k
-        SSD = [0.] * max_k
-
-        for k in range(1, max_k):
-            c = KMeans(k, X)
-            print(k)
-
-            s = RunningStatistics()
-            for _ in range(samples):
-                B = list(B_Generator.xrange(nX))
-                b = KMeans(k, B)
-                s += math.log(b.Wk)
-
-            SSD[k] = s.standard_deviation * math.sqrt(1 + 1/s.count)
-            G[k] = math.log(c.Wk) - s.mean
-
-        for k in range(1, max_k - 1):
-            next = G[k+1] - SSD[k+1]
-            print(k, G[k], next, G[k] - next)
-
+        actual = optimal_clusters(X)
+        self.assertEqual(len(MU), actual)
 
     @unittest.skip('used for debugging command line')
     def test_commandLine(self):
         args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
         args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_in.txt'
-        args.clusters = 10
+        args.clusters = -1
         args.resultColumn = 'Cluster'
         args.outputFileName = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_clustered.txt'
-        args.fields = ['energy','n_bpm']
+        #args.fields = ['energy','n_bpm']
+        args.fields = ['instrumentalness','speechiness','valence', 'n_bpm']
         #args.fields = ['acousticness','danceability','energy','instrumentalness',
         #               'liveness','speechiness','valence', 'n_bpm']
         KMeans.run(args)
