@@ -88,7 +88,7 @@ class Test_k_means(unittest.TestCase):
         self.assertAlmostEqual(actual[3][0], 0.5, 1)
         self.assertAlmostEqual(actual[3][1], -0.5, 1)
 
-    unittest.skip('used for debugging command line')
+    @unittest.skip('used for debugging command line')
     def test_commandLine(self):
         args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
         args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\mbm.txt'
