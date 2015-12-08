@@ -4,7 +4,7 @@ import csv
 #import numpy as np
 import random
 import argparse
-from hew.structures.math import Vector, MonteCarlo
+from hew.structures.math import Vector
 
 try:
     from itertools import izip
@@ -34,30 +34,95 @@ def convertBooleanFields(o):
 # and
 # https://gist.github.com/larsmans/4952848
 #
-# mu :: the center point of a cluster
-# MU :: array of center points
+# mu :: the center point of a cluster, the centroid
+# MU :: array of centroids
 # X  :: a set of n points
 # x  :: a point vector
 # k  :: number of clusters
 # d  :: number of dimensions
 
 # -----------------------------------------------------------------------------
-# Optimal cluster
+# Cluster Algorithms
 # -----------------------------------------------------------------------------
 
+def has_converged(A, B):
+    return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
+
+# http://rosettacode.org/wiki/K-means%2B%2B_clustering#Python
+# https://datasciencelab.wordpress.com/2014/01/15/improved-seeding-for-clustering-with-k-means/
+def kmeans_plus_plus(X, k):
+    """ Determines `k` centroids from an array of points `X` """
+
+    def min_dist(x, C):
+        result = float("inf")
+        for i, c in enumerate(C):
+            d = Vector.square_distance(x, c)
+            if d < result:
+                result = d
+        return result
+
+    l = len(X)
+    MU = [None] * k
+    dist = [0.] * l
+
+    MU[0] = list(random.choice(X))
+
+    for i in xrange(1, k):
+        accum = 0.
+        centroids = MU[:i]
+        for j, x in enumerate(X):
+            dist[j] = min_dist(x, centroids)
+            accum += dist[j]
+
+        accum *= random.random()
+
+        for j, d in enumerate(dist):
+            accum -= d
+            if accum <= 0:
+                MU[i] = list(X[j])
+                break
+
+    return MU
+
+# https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
+def lloyds_algorithm(X, centroids):
+    """ `X` is the array of points, 'centroids' is the initial array of centroids """
+    MU = list(centroids)
+    l = len(X)
+    k = len(MU)
+    C = [None] * l
+    iterations = 0
+    done = False
+
+    while not done:
+        old = list(MU)
+        iterations += 1
+
+        for i, x in enumerate(X):
+            C[i] = min(xrange(k), 
+                        key=lambda j: Vector.square_distance(x, MU[j]))
+        for j, mu in enumerate(MU):
+            members = [x for i, x in enumerate(X) if C[i] == j]
+            MU[j] = Vector.mean(members)
+
+        done = has_converged(MU, old)
+
+    return MU, C, iterations
+
 # https://datasciencelab.wordpress.com/2013/12/27/finding-the-k-in-k-means-clustering/
-def optimal_clusters(vectors, max_k=10, samples=10):
-    """ `vectors` is the input array of points to test
+def optimal_clusters(X, max_k=10, samples=10):
+    """ `X` is the input array of points to test
     `max_k` is the maximum number of clusters to test for
-    `samples` is the number of monte carlo simulations to run at each cluster step
+    `samples` is the number of monte carlo simulations to run at each step
     """
-    from hew.structures.math import RunningStatistics
+    from hew.structures.math import RunningStatistics, MonteCarlo
     import math
 
-    mins, maxs = Vector.bounds(vectors)
+    mins, maxs = Vector.bounds(X)
     B_Generator = MonteCarlo(mins, maxs)
-    nX = len(vectors)
+    nX = len(X)
 
+    # arrays that include max_k
     Gap = [0.] * (max_k + 1)
     SSD = [0.] * (max_k + 1)
     WK0 = [0.] * (max_k + 1)
@@ -66,8 +131,9 @@ def optimal_clusters(vectors, max_k=10, samples=10):
     print('Checking for optimal cluster size', file=sys.stderr)
 
     for k in range(1, max_k + 1):
-        c = KMeans(k, vectors)
-        print('  ', k, file=sys.stderr)
+        c = KMeans(k, X, True)
+        print(k, end=' ', file=sys.stderr)
+        sys.stderr.flush()
 
         s = RunningStatistics()
         for _ in range(samples):
@@ -80,20 +146,18 @@ def optimal_clusters(vectors, max_k=10, samples=10):
         SSD[k] = s.standard_deviation * math.sqrt(1 + 1/s.count)
         Gap[k] = s.mean - WK0[k]
 
+    print(' ', file=sys.stderr)
+
     opt_k = None
     for k in range(1, max_k - 1):
         next = Gap[k+1] - SSD[k+1]
         delta = Gap[k] - next
         if delta > 0 and not opt_k:
             opt_k = k
-        #print(k, WK0[k], WKB[k], Gap[k], next, delta)
     
     return opt_k
 
 # -----------------------------------------------------------------------------
-
-def has_converged(A, B):
-    return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
  
 class KMeans:
     # -------------------------------------------------------------------------
@@ -109,43 +173,31 @@ class KMeans:
                                   for f in vectorFields]))
 
         if k == -1:
-            k = optimal_clusters(vectors)
+            k = optimal_clusters(vectors, 20)
 
-        return KMeans(k, vectors)
+        return KMeans(k, vectors, True)
 
     # -------------------------------------------------------------------------
     # Customization Methods
     # -------------------------------------------------------------------------
-    def __init__(self, k, vectors):
+    def __init__(self, k, vectors, use_kpp=False):
+        """ 
+        `k` is the number of clusters to find 
+        `vectors` is the array of points
+        `use_kpp` if True, the initial centroids will be seeded using KMeans++
+        """
         assert len(vectors) > 0
 
-        def lloyds_algorithm(X, k):
-            # Initialize from random points.
-            l = len(X)
-            MU = random.sample(set(X), k)
-            C = [None] * l
-            iterations = 0
-            done = False
-
-            while not done:
-                old = list(MU)
-                iterations += 1
-
-                for i, x in enumerate(X):
-                    C[i] = min(xrange(k), 
-                               key=lambda j: Vector.square_distance(x, MU[j]))
-                for j, mu in enumerate(MU):
-                    members = [x for i, x in enumerate(X) if C[i] == j]
-                    MU[j] = Vector.mean(members)
-
-                done = has_converged(MU, old)
-
-            return MU, C, iterations
+        # initialize cluster centers
+        if use_kpp:
+           MU0 = kmeans_plus_plus(vectors, k) 
+        else:
+           MU0 = random.sample(set(vectors), k)
 
         self.vectors = vectors
         self.k = k
         self.d = len(vectors[0])
-        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, k)
+        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, MU0)
         self.C = None
 
     def __len__(self):
