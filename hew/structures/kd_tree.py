@@ -1,6 +1,6 @@
 import collections
 import math
-from hew.structures.math import Vector
+from hew.structures.vector import distance_euclid_squared as distance_fn
 
 # -----------------------------------------------------------------------------
 # Adapted from: 
@@ -68,12 +68,11 @@ class KDTree(object):
         # lowest squared distance
 
         def recursive_search(here):
-
             if here is None:
                 return
             point, axis, label, left, right = here
 
-            here_sd = Vector.square_distance(point, destination)
+            here_sd = distance_fn(point, destination)
             if here_sd < best[2]:
                 best[:] = point, label, here_sd
 

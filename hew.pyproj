@@ -24,8 +24,10 @@
     <Compile Include="hew\normalizer.py" />
     <Compile Include="hew\structures\bk_tree.py" />
     <Compile Include="hew\structures\kd_tree.py" />
-    <Compile Include="hew\structures\math.py" />
+    <Compile Include="hew\structures\monte_carlo.py" />
     <Compile Include="hew\structures\node.py" />
+    <Compile Include="hew\structures\running_statistics.py" />
+    <Compile Include="hew\structures\vector.py" />
     <Compile Include="hew\structures\__init__.py">
       <SubType>Code</SubType>
     </Compile>

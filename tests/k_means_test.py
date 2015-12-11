@@ -2,6 +2,7 @@ import unittest
 import random
 import collections
 from hew import KMeans
+from hew.structures.vector import distance_euclid_squared as distance_fn
 
 def random_point(d=2):
     return tuple([random.uniform(-1, 1) for _ in range(d)])
@@ -37,27 +38,27 @@ def init_4_clusters(n=200):
 class Test_k_means(unittest.TestCase):
     def test_smoke(self):
         X = init_board_gauss(2000, 6, 6)
-        target = KMeans(6, X)
+        target = KMeans(6, X, distance_fn)
         self.assertEqual(len(X), len(target))
         self.assertEqual(6, target.k)
 
     def test_tooManyRequestedClusters(self):
         X = [(0, 0, 1)] * 12
         with self.assertRaises(ValueError):
-            target = KMeans(2, X)
+            target = KMeans(2, X, distance_fn)
 
     def test_optimal_clusters(self):
         from hew.clusters.k_means import optimal_clusters
 
         X = init_4_clusters(400)
-        actual = optimal_clusters(X)
+        actual = optimal_clusters(X, distance_fn, 10, 10)
         self.assertEqual(4, actual)
 
     def test_kmeans_plus_plus(self):
         from hew.clusters.k_means import kmeans_plus_plus
 
         X = init_4_clusters()
-        actual = kmeans_plus_plus(X, 4)
+        actual = kmeans_plus_plus(X, 4, distance_fn)
 
         found = [False] * 4
         for a in actual:
@@ -73,11 +74,12 @@ class Test_k_means(unittest.TestCase):
 
     def test_lloyds(self):
         from hew.clusters.k_means import lloyds_algorithm
+        from hew.structures.vector import distance_euclid_squared as distance_fn
 
         X = init_4_clusters()
         centroids = [(-0.75, -0.75), (0.75, 0.75), (-0.75, 0.75), (0.75, -0.75)]
 
-        actual, clusters, iterations = lloyds_algorithm(X, centroids)
+        actual, clusters, iterations = lloyds_algorithm(X, centroids, distance_fn)
 
         self.assertAlmostEqual(actual[0][0], -0.5, 1)
         self.assertAlmostEqual(actual[0][1], -0.5, 1)
@@ -93,6 +95,7 @@ class Test_k_means(unittest.TestCase):
         args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
         args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\mbm.txt'
         args.clusters = -1
+        args.distance = 'cosine'
         args.resultColumn = 'Cluster'
         args.outputFileName = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\mbm_clustered.txt'
         args.fields = ['energy', 'instrumentalness']

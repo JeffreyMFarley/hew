@@ -3,13 +3,14 @@ import unittest
 import math
 from random import random
 from hew import KDTree
-from hew.structures.math import Vector
+from hew.structures.vector import distance_euclid_squared as distance_fn
 
 if sys.version >= '3':
     xrange = range
 
 class Test_KDTree(unittest.TestCase):
     def test_smoke(self):
+
         k = 5
         npoints = 1000
         lookups = 1000
@@ -25,8 +26,7 @@ class Test_KDTree(unittest.TestCase):
             destination = [random() for _ in xrange(k)]
             _, _, mindistance = tree.nearest_neighbor(destination)
         
-            minsq = min(Vector.square_distance(p, destination) 
-                        for p, _ in points)
+            minsq = min(distance_fn(p, destination) for p, _ in points)
             self.assertLess(abs(math.sqrt(minsq) - mindistance), eps)
 
 

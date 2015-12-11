@@ -4,7 +4,6 @@ import csv
 #import numpy as np
 import random
 import argparse
-from hew.structures.math import Vector
 
 try:
     from itertools import izip
@@ -50,13 +49,13 @@ def has_converged(A, B):
 
 # http://rosettacode.org/wiki/K-means%2B%2B_clustering#Python
 # https://datasciencelab.wordpress.com/2014/01/15/improved-seeding-for-clustering-with-k-means/
-def kmeans_plus_plus(X, k):
+def kmeans_plus_plus(X, k, distance_fn):
     """ Determines `k` centroids from an array of points `X` """
 
     def min_dist(x, C):
         result = float("inf")
         for i, c in enumerate(C):
-            d = Vector.square_distance(x, c)
+            d = distance_fn(x, c)
             if d < result:
                 result = d
         return result
@@ -85,9 +84,11 @@ def kmeans_plus_plus(X, k):
     return MU
 
 # https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
-def lloyds_algorithm(X, centroids):
-    """ `X` is the array of points, 'centroids' is the initial array of centroids """
-    MU = list(centroids)
+def lloyds_algorithm(X, initial_MU, distance_fn):
+    """ `X` is the array of points, 'initial_MU' is the initial array of centroids """
+    from hew.structures.vector import centroid
+
+    MU = list(initial_MU)
     l = len(X)
     k = len(MU)
     C = [None] * l
@@ -99,26 +100,26 @@ def lloyds_algorithm(X, centroids):
         iterations += 1
 
         for i, x in enumerate(X):
-            C[i] = min(xrange(k), 
-                        key=lambda j: Vector.square_distance(x, MU[j]))
+            C[i] = min(xrange(k), key=lambda j: distance_fn(x, MU[j]))
         for j, mu in enumerate(MU):
             members = [x for i, x in enumerate(X) if C[i] == j]
-            MU[j] = Vector.mean(members)
+            MU[j] = centroid(members)
 
         done = has_converged(MU, old)
 
     return MU, C, iterations
 
 # https://datasciencelab.wordpress.com/2013/12/27/finding-the-k-in-k-means-clustering/
-def optimal_clusters(X, max_k=10, samples=10):
+def optimal_clusters(X, distance_fn, max_k=10, samples=10):
     """ `X` is the input array of points to test
     `max_k` is the maximum number of clusters to test for
     `samples` is the number of monte carlo simulations to run at each step
     """
-    from hew.structures.math import RunningStatistics, MonteCarlo
+    from hew import RunningStatistics, MonteCarlo
+    from hew.structures.vector import bounds
     import math
 
-    mins, maxs = Vector.bounds(X)
+    mins, maxs = bounds(X)
     B_Generator = MonteCarlo(mins, maxs)
     nX = len(X)
 
@@ -131,14 +132,14 @@ def optimal_clusters(X, max_k=10, samples=10):
     print('Checking for optimal cluster size', file=sys.stderr)
 
     for k in range(1, max_k + 1):
-        c = KMeans(k, X, True)
+        c = KMeans(k, X, distance_fn, True)
         print(k, end=' ', file=sys.stderr)
         sys.stderr.flush()
 
         s = RunningStatistics()
         for _ in range(samples):
             B = list(B_Generator.xrange(nX))
-            b = KMeans(k, B)
+            b = KMeans(k, B, distance_fn)
             s += math.log(b.Wk)
 
         WK0[k] = math.log(c.Wk)
@@ -164,7 +165,7 @@ class KMeans:
     # Factory Methods
     # -------------------------------------------------------------------------
     @classmethod
-    def fromTable(cls, k, arrayOfDictionaries, vectorFields):
+    def fromTable(cls, k, arrayOfDictionaries, vectorFields, distance_fn):
         """ Initializes a k-means instance from a tabular structure """
         vectors = []
         for o in arrayOfDictionaries:
@@ -173,31 +174,34 @@ class KMeans:
                                   for f in vectorFields]))
 
         if k == -1:
-            k = optimal_clusters(vectors, 20)
+            k = optimal_clusters(vectors, distance_fn, 20)
 
-        return KMeans(k, vectors, True)
+        return KMeans(k, vectors, distance_fn, True)
 
     # -------------------------------------------------------------------------
     # Customization Methods
     # -------------------------------------------------------------------------
-    def __init__(self, k, vectors, use_kpp=False):
+    def __init__(self, k, vectors, distance_fn, use_kpp=False):
         """ 
         `k` is the number of clusters to find 
         `vectors` is the array of points
+        `distance_fn` is the function used to calculate the difference between points
         `use_kpp` if True, the initial centroids will be seeded using KMeans++
         """
         assert len(vectors) > 0
+        self.distance_fn = distance_fn
 
         # initialize cluster centers
         if use_kpp:
-           MU0 = kmeans_plus_plus(vectors, k) 
+           MU0 = kmeans_plus_plus(vectors, k,  distance_fn) 
         else:
            MU0 = random.sample(set(vectors), k)
 
         self.vectors = vectors
         self.k = k
         self.d = len(vectors[0])
-        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, MU0)
+        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, MU0, 
+                                                                 distance_fn)
         self.C = None
 
     def __len__(self):
@@ -213,7 +217,7 @@ class KMeans:
         C = self.groups
         coeff = [1/(2*len(C[i])) for i in xrange(self.k)]
 
-        return sum([Vector.square_distance(self.MU[i], c) # * coeff[i]
+        return sum([self.distance_fn(self.MU[i], c) # * coeff[i]
                     for i in range(self.k) 
                     for c in C[i]])
 
@@ -236,7 +240,13 @@ class KMeans:
             out_cols = reader.fieldnames
             input = [convertBooleanFields(row) for row in reader]
 
-        k_means = KMeans.fromTable(args.clusters, input, args.fields)
+        distance_fn = None
+        if args.distance == 'euclid':
+            from hew.structures.vector import distance_euclid_squared
+            distance_fn = distance_euclid_squared
+
+        k_means = KMeans.fromTable(args.clusters, input, args.fields, 
+                                   distance_fn)
 
         with open(args.outputFileName, 'w') as f:
             cells = list(out_cols)
@@ -266,6 +276,9 @@ def buildArgParser():
     p.add_argument('-o', '--output', metavar='outputFileName',
                    default='clusters.txt',
                    help='the name of the file that will hold the results')
+    p.add_argument('-d', '--distance', metavar='distance',
+                   default='euclid', choices=['euclid', 'cosine'],
+                   help='the distance measurement to use')
     p.add_argument('fields', metavar='fields', nargs='+',
                    help='the value columns')
     return p
