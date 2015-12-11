@@ -269,16 +269,15 @@ def buildArgParser():
     p = argparse.ArgumentParser(description=description)
     p.add_argument('input', metavar='inputFileName',
                    help='the file to process')
-    p.add_argument('-c', '--clusters', metavar='clusters',
-                   default=-1,
+    p.add_argument('-c', '--clusters', default=-1, type=int,
                    help='the number of clusters')
-    p.add_argument('-r', '--results', metavar='resultColumn',
+    p.add_argument('-r', '--results', dest='resultColumn',
                    default='cluster',
                    help='the column that holds the result')
-    p.add_argument('-o', '--output', metavar='outputFileName',
+    p.add_argument('-o', '--output', dest='outputFileName',
                    default='clusters.txt',
                    help='the name of the file that will hold the results')
-    p.add_argument('-d', '--distance', metavar='distance',
+    p.add_argument('-d', '--distance',
                    default='euclid', choices=['euclid', 'cosine'],
                    help='the distance measurement to use')
     p.add_argument('fields', metavar='fields', nargs='+',
