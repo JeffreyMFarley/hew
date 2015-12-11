@@ -1,7 +1,6 @@
 import os
 import sys
 import csv
-#import numpy as np
 import random
 import argparse
 
@@ -244,6 +243,9 @@ class KMeans:
         if args.distance == 'euclid':
             from hew.structures.vector import distance_euclid_squared
             distance_fn = distance_euclid_squared
+        elif args.distance == 'cosine':
+            from hew.structures.vector import distance_cosine_similarity
+            distance_fn = distance_cosine_similarity
 
         k_means = KMeans.fromTable(args.clusters, input, args.fields, 
                                    distance_fn)

@@ -54,6 +54,14 @@ class Test_k_means(unittest.TestCase):
         actual = optimal_clusters(X, distance_fn, 10, 10)
         self.assertEqual(4, actual)
 
+    def test_optimal_clusters_cosine(self):
+        from hew.structures.vector import distance_cosine_similarity as alt_distance
+        from hew.clusters.k_means import optimal_clusters
+
+        X = init_4_clusters(400)
+        actual = optimal_clusters(X, distance_fn, 10, 10)
+        self.assertEqual(4, actual)
+
     def test_kmeans_plus_plus(self):
         from hew.clusters.k_means import kmeans_plus_plus
 
@@ -93,13 +101,13 @@ class Test_k_means(unittest.TestCase):
     @unittest.skip('used for debugging command line')
     def test_commandLine(self):
         args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
-        args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\mbm.txt'
-        args.clusters = -1
+        args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_in.txt'
+        args.clusters = 10
         args.distance = 'cosine'
         args.resultColumn = 'Cluster'
-        args.outputFileName = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\mbm_clustered.txt'
-        args.fields = ['energy', 'instrumentalness']
-        #args.fields = ['instrumentalness','speechiness','valence', 'n_bpm']
+        args.outputFileName = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_clustered.txt'
+        #args.fields = ['energy', 'instrumentalness']
+        args.fields = ['danceability','energy', 'instrumentalness','speechiness','n_bpm']
         #args.fields = ['acousticness','danceability','energy','instrumentalness',
         #               'liveness','speechiness','valence', 'n_bpm']
         KMeans.run(args)

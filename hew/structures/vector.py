@@ -31,9 +31,46 @@ def centroid(vectors):
         c[i] /= n
     return c
 
+def distance_cosine_similarity(a, b):
+    """ Calculates the Ochini coefficient between two vectors"""
+    from math import acos
+
+    numerator = dot(a, b)
+    denominator = length(a) * length(b)
+    x = numerator/denominator if denominator else 0 
+    bounded_x = min(1,max(x,-1))
+    return acos(bounded_x)
+
 def distance_euclid_squared(a, b):
+    """ Calculates the Euclidean distance between two vectors"""
     s = 0
     for x, y in izip(a, b):
         d = x - y
         s += d * d
     return s
+
+def distance_manhattan(a, b):
+    """ Calculates the Manhattan distance between two vectors"""
+    from math import fabs
+
+    s = 0
+    for x, y in izip(a, b):
+        s += fabs(x - y)
+    return s
+
+def dot(a, b):
+    """ Calculates the dot product of two vectors"""
+    s = 0
+    for x, y in izip(a, b):
+        s += x * y
+    return s
+
+def length(a):
+    """ Calculates the length of a vector"""
+    from math import sqrt
+
+    s = 0
+    for x in a:
+        s += x * x
+    return sqrt(s)
+
