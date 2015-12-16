@@ -128,11 +128,11 @@ def optimal_clusters(X, distance_fn, max_k=10, samples=10):
     WK0 = [0.] * (max_k + 1)
     WKB = [0.] * (max_k + 1)
 
-    print('Checking for optimal cluster size', file=sys.stderr)
+    sys.stderr.write('Checking for optimal cluster size\n')
 
     for k in range(1, max_k + 1):
         c = KMeans(k, X, distance_fn, True)
-        print(k, end=' ', file=sys.stderr)
+        sys.stderr.write('{0} '.format(k))
         sys.stderr.flush()
 
         s = RunningStatistics()
@@ -146,7 +146,7 @@ def optimal_clusters(X, distance_fn, max_k=10, samples=10):
         SSD[k] = s.standard_deviation * math.sqrt(1 + 1/s.count)
         Gap[k] = s.mean - WK0[k]
 
-    print(' ', file=sys.stderr)
+    sys.stderr.write('\n')
 
     opt_k = None
     for k in range(1, max_k - 1):
@@ -253,12 +253,14 @@ class KMeans:
         with open(args.outputFileName, 'w') as f:
             cells = list(out_cols)
             cells.append(args.resultColumn)
-            print('\t'.join(cells), file=f)
+            f.write('\t'.join(cells))
+            f.write('\n')
 
             for orig, cluster in izip(input, k_means):
                 cells = [str(orig[x]) for x in out_cols]
                 cells.append(str(cluster + 1))
-                print('\t'.join(cells), file=f)
+                f.write('\t'.join(cells))
+                f.write('\n')
 
 # -----------------------------------------------------------------------------
 # Main
