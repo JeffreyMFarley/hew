@@ -16,10 +16,13 @@
 /*.egg-info
 /.eggs/
 /tests/*.egg-info
+*.egg
 
 # Docker & Vagrant
 /.bundle
 /.cache
 /.vagrant
 
+# OS Files
+.DS_Store
 .bash_history
