@@ -121,8 +121,8 @@ def optimal_clusters(X, distance_fn, max_k=10, samples=10):
     `max_k` is the maximum number of clusters to test for
     `samples` is the number of monte carlo simulations to run at each step
     """
-    from hew.structures.running_statistics import *
-    from hew.structures.monte_carlo import *
+    from hew.structures.running_statistics import RunningStatistics
+    from hew.structures.monte_carlo import MonteCarlo
     from hew.structures.vector import bounds
     import math
 
