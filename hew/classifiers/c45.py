@@ -6,9 +6,10 @@ import csv
 from hew.structures.node import Node
 from collections import defaultdict
 
-class C45:
+
+class C45(object):
     """
-    Credit for this goes to 
+    Credit for this goes to
         Jeremy Kun -> https://github.com/j2kun/decision-trees
     and Timothy Trukhanov -> https://github.com/geerk/C45algorithm
     """
@@ -77,7 +78,7 @@ class C45:
     def get_indexes(self, col, v):
         """ Returns indexes of values _v_ in column _col_.
         """
-        return {i for i,x in enumerate(self.columnSet[col]) if x == v}
+        return {i for i, x in enumerate(self.columnSet[col]) if x == v}
 
     def get_values(self, col, indexes):
         """ Returns values of _indexes_ in column _col_
@@ -90,7 +91,7 @@ class C45:
     def info(self, res_col):
         """ Calculates the entropy where res_col column = _res_col_.
         """
-        s = 0 # sum
+        s = 0  # sum
         result_len = self.flen(res_col)
         for v in self.uniques(res_col):
             p = self.frequency(res_col, v) / result_len
@@ -98,14 +99,14 @@ class C45:
         return -s
 
     def infox(self, col, res_col):
-        """ Calculates the entropy of the after dividing it on the subtables 
+        """ Calculates the entropy of the after dividing it on the subtables
             by column _col_.
         """
-        s = 0 # sum
+        s = 0  # sum
         for subt in self.partitionOnFeature(col):
             s += (subt.flen(col) / self.flen(col)) * subt.info(res_col)
         return s
-  
+
     def gain(self, x, res_col):
         """ The criterion for selecting attributes for splitting.
         """
@@ -115,9 +116,9 @@ class C45:
 
     def buildPartition(self, col, v):
         idxs = self.get_indexes(col, v)
-        p = {k: [x for i,x in enumerate(v) if i in idxs] 
+        p = {k: [x for i, x in enumerate(v) if i in idxs]
              for k, v in self.columnSet.items()}
-        
+
         sub = C45(p, False)
         sub.depth = self.depth + 1
         sub.maxDepth = self.maxDepth
@@ -138,7 +139,7 @@ class C45:
         if self.depth > self.maxDepth:
             return tree
 
-        gain_list = [(k, self.gain(k, res_col)) 
+        gain_list = [(k, self.gain(k, res_col))
                      for k in self.columnSet if k != res_col]
         if not gain_list:
             return tree
@@ -153,7 +154,7 @@ class C45:
         return tree
 
     @classmethod
-    def outputDecision(cls, node, res_col, predicates, file):
+    def outputDecision(cls, node, res_col, predicates, fout):
         c45 = node.data
         rule = c45.rule()
         if rule:
@@ -162,15 +163,15 @@ class C45:
         if not node.children:
             target = "~".join(set(c45.uniques(res_col)))
             line = "{0}\t{1}\t{2}={3}\t{4}".format(c45.size(), len(predicates),
-                                                   res_col, target, 
+                                                   res_col, target,
                                                    ' & '.join(predicates))
-            print(line, file=file)
+            print(line, file=fout)
         else:
             for c in node.children:
-                cls.outputDecision(c, res_col, list(predicates), file)
+                cls.outputDecision(c, res_col, list(predicates), fout)
 
     @classmethod
-    def makeDecisionTree(cls, arrayOfDictionaries, res_col, file, maxDepth=20):
+    def makeDecisionTree(cls, arrayOfDictionaries, res_col, fout, maxDepth=20):
         """ Returns a tree of decisions from _arrayOfDictionaries_
             _res_col_ must be the name of field that contains the target result
         """
@@ -181,8 +182,8 @@ class C45:
 
         root.maxDepth = maxDepth
         a = root.buildTree(res_col)
-        print('Count\tPath_Length\tResult\tPredicates', file=file)
-        C45.outputDecision(a, res_col, [], file)
+        print('Count\tPath_Length\tResult\tPredicates', file=fout)
+        C45.outputDecision(a, res_col, [], fout)
 
 
 # -----------------------------------------------------------------------------
@@ -199,7 +200,7 @@ def buildArgParser():
     p.add_argument('output', nargs='?', metavar='outputFileName',
                    default='decision.txt',
                    help='the name of the file that will hold the results')
-    p.add_argument('--max', nargs='?', action='store', type=int, 
+    p.add_argument('--max', nargs='?', action='store', type=int,
                    dest='maxDepth', default=20,
                    help='the maximum depth the features will split')
 
@@ -211,10 +212,7 @@ if __name__ == '__main__':
 
     with open(args.input, 'r') as f:
         reader = csv.DictReader(f, dialect=csv.excel_tab)
-        input = [row for row in reader]
+        data = [row for row in reader]
 
     with open(args.output, 'w') as f:
-        C45.makeDecisionTree(input, args.target, f, args.maxDepth)
-
-
-
+        C45.makeDecisionTree(data, args.target, f, args.maxDepth)

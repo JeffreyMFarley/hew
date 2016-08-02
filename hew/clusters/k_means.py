@@ -1,12 +1,12 @@
-import os
 import sys
 import csv
 import random
 import argparse
 
+
 try:
     from itertools import izip
-except ImportError:  #python3.x
+except ImportError:  # python3.x
     izip = zip
 
 if sys.version >= '3':
@@ -16,8 +16,9 @@ if sys.version >= '3':
 # obj -> obj
 # -----------------------------------------------------------------------------
 
+
 def convertBooleanFields(o):
-    for k,v in o.items():
+    for k, v in o.items():
         if v.lower() == 'false':
             o[k] = 0.
         elif v.lower() == 'true':
@@ -27,7 +28,7 @@ def convertBooleanFields(o):
     return o
 
 # -----------------------------------------------------------------------------
-# Adapted from 
+# Adapted from
 # https://datasciencelab.wordpress.com/2013/12/12/clustering-with-k-means-in-python/
 # and
 # https://gist.github.com/larsmans/4952848
@@ -43,8 +44,10 @@ def convertBooleanFields(o):
 # Cluster Algorithms
 # -----------------------------------------------------------------------------
 
+
 def has_converged(A, B):
     return set([tuple(a) for a in A]) == set([tuple(b) for b in B])
+
 
 # http://rosettacode.org/wiki/K-means%2B%2B_clustering#Python
 # https://datasciencelab.wordpress.com/2014/01/15/improved-seeding-for-clustering-with-k-means/
@@ -53,7 +56,7 @@ def kmeans_plus_plus(X, k, distance_fn):
 
     def min_dist(x, C):
         result = float("inf")
-        for i, c in enumerate(C):
+        for c in C:
             d = distance_fn(x, c)
             if d < result:
                 result = d
@@ -82,9 +85,13 @@ def kmeans_plus_plus(X, k, distance_fn):
 
     return MU
 
+
 # https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
 def lloyds_algorithm(X, initial_MU, distance_fn):
-    """ `X` is the array of points, 'initial_MU' is the initial array of centroids """
+    """
+    `X` is the array of points,
+    'initial_MU' is the initial array of centroids
+    """
     from hew.structures.vector import centroid
 
     MU = list(initial_MU)
@@ -100,13 +107,14 @@ def lloyds_algorithm(X, initial_MU, distance_fn):
 
         for i, x in enumerate(X):
             C[i] = min(xrange(k), key=lambda j: distance_fn(x, MU[j]))
-        for j, mu in enumerate(MU):
+        for j, _ in enumerate(MU):
             members = [x for i, x in enumerate(X) if C[i] == j]
             MU[j] = centroid(members)
 
         done = has_converged(MU, old)
 
     return MU, C, iterations
+
 
 # https://datasciencelab.wordpress.com/2013/12/27/finding-the-k-in-k-means-clustering/
 def optimal_clusters(X, distance_fn, max_k=10, samples=10):
@@ -150,16 +158,17 @@ def optimal_clusters(X, distance_fn, max_k=10, samples=10):
 
     opt_k = None
     for k in range(1, max_k - 1):
-        next = Gap[k+1] - SSD[k+1]
-        delta = Gap[k] - next
+        nextOne = Gap[k+1] - SSD[k+1]
+        delta = Gap[k] - nextOne
         if delta > 0 and not opt_k:
             opt_k = k
-    
+
     return opt_k
 
 # -----------------------------------------------------------------------------
- 
-class KMeans:
+
+
+class KMeans(object):
     # -------------------------------------------------------------------------
     # Factory Methods
     # -------------------------------------------------------------------------
@@ -168,8 +177,8 @@ class KMeans:
         """ Initializes a k-means instance from a tabular structure """
         vectors = []
         for o in arrayOfDictionaries:
-            vectors.append(tuple([float(o[f]) 
-                                  if f in o else 0. 
+            vectors.append(tuple([float(o[f])
+                                  if f in o else 0.
                                   for f in vectorFields]))
 
         if k == -1:
@@ -181,10 +190,10 @@ class KMeans:
     # Customization Methods
     # -------------------------------------------------------------------------
     def __init__(self, k, vectors, distance_fn, use_kpp=False):
-        """ 
-        `k` is the number of clusters to find 
+        """
+        `k` is the number of clusters to find
         `vectors` is the array of points
-        `distance_fn` is the function used to calculate the difference between points
+        `distance_fn` a function that calculates the difference between points
         `use_kpp` if True, the initial centroids will be seeded using KMeans++
         """
         assert len(vectors) > 0
@@ -192,14 +201,14 @@ class KMeans:
 
         # initialize cluster centers
         if use_kpp:
-           MU0 = kmeans_plus_plus(vectors, k,  distance_fn) 
+            MU0 = kmeans_plus_plus(vectors, k,  distance_fn)
         else:
-           MU0 = random.sample(set(vectors), k)
+            MU0 = random.sample(set(vectors), k)
 
         self.vectors = vectors
         self.k = k
         self.d = len(vectors[0])
-        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, MU0, 
+        self.MU, self.clusterIndex, self.iter = lloyds_algorithm(vectors, MU0,
                                                                  distance_fn)
         self.C = None
 
@@ -214,10 +223,10 @@ class KMeans:
     def Wk(self):
         """ A measure of the compactness of clustering """
         C = self.groups
-        coeff = [1/(2*len(C[i])) for i in xrange(self.k)]
+        # coeff = [1/(2*len(C[i])) for i in xrange(self.k)]
 
-        return sum([self.distance_fn(self.MU[i], c) # * coeff[i]
-                    for i in range(self.k) 
+        return sum([self.distance_fn(self.MU[i], c)  # * coeff[i]
+                    for i in range(self.k)
                     for c in C[i]])
 
     @property
@@ -237,7 +246,7 @@ class KMeans:
         with open(args.input, 'r') as f:
             reader = csv.DictReader(f, dialect=csv.excel_tab)
             out_cols = reader.fieldnames
-            input = [convertBooleanFields(row) for row in reader]
+            data = [convertBooleanFields(row) for row in reader]
 
         distance_fn = None
         if args.distance == 'euclid':
@@ -247,7 +256,7 @@ class KMeans:
             from hew.structures.vector import distance_cosine_similarity
             distance_fn = distance_cosine_similarity
 
-        k_means = KMeans.fromTable(args.clusters, input, args.fields, 
+        k_means = KMeans.fromTable(args.clusters, data, args.fields,
                                    distance_fn)
 
         with open(args.outputFileName, 'w') as f:
@@ -265,6 +274,7 @@ class KMeans:
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
+
 
 def buildArgParser():
     description = 'Determine clusters from a table of features'

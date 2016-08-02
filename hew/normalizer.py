@@ -6,9 +6,8 @@ import sys
 import unicodedata
 import itertools
 import csv
-from pymonad.Reader import *
-from pymonad.List import *
-from pymonad.Maybe import * 
+from pymonad.Reader import curry
+from pymonad.Maybe import Just, Nothing
 
 if sys.version >= '3':
     _char = chr
@@ -19,14 +18,16 @@ else:
 # builders
 #------------------------------------------------------------------------------
 
+
 def buildRomanizeReplace():
-    ''' This table for the `translate` function replaces one character for another 
+    '''
+    This table for the `translate` function replaces one character for another
     '''
     table = {}
     for row in acquireUnicode():
         if row['General_Category'] == 'Mn':
             table[int(row['CodePoint'], 16)] = None
-        
+
     # latin extended not handled by decombining
     table[0xd0] = ord('D')      # D bar
     table[0xf0] = ord('d')      # eth
@@ -47,6 +48,7 @@ def buildRomanizeReplace():
     table[0xfeff] = ord(' ')
     return table
 
+
 def buildRomanizeExpand():
     table = {}
     table[u'\xc5'] = u'Aa'  # ring a
@@ -58,53 +60,56 @@ def buildRomanizeExpand():
     table[u'\xfe'] = u'th'  # thorn
     return table
 
-def buildPunctuationReplace():
-    table = {0xa6 : u'|',
-             0xb4 : u'\'',
-             0xb6 : u'*',
-             0xd7 : u'x',
 
-            0x2022 : u'*',   # bullet
-            0x2023 : u'*',   
-            0x2024 : u'.',   
-            0x2027 : u'*',
-            0x2032 : u"'",
-            0x2035 : u"'",
-            0x2039 : u'<',
-            0x203a : u'>',
-            0x2043 : u'-',
-            0x2044 : u'/',
-            0x204e : u'*',
-            0x2053 : u'~',
-            0x205f : u' ',
-            }
-    table.update({c :u' ' for c in range(0x2000, 0x200a)})
-    table.update({c :u'-' for c in range(0x2010, 0x2015)})
-    table.update({c :u"'" for c in range(0x2018, 0x201b)})
-    table.update({c :u'"' for c in range(0x201c, 0x201f)})
+def buildPunctuationReplace():
+    table = {0xa6: u'|',
+             0xb4: u'\'',
+             0xb6: u'*',
+             0xd7: u'x',
+
+             0x2022: u'*',   # bullet
+             0x2023: u'*',
+             0x2024: u'.',
+             0x2027: u'*',
+             0x2032: u"'",
+             0x2035: u"'",
+             0x2039: u'<',
+             0x203a: u'>',
+             0x2043: u'-',
+             0x2044: u'/',
+             0x204e: u'*',
+             0x2053: u'~',
+             0x205f: u' ',
+             }
+    table.update({c: u' ' for c in range(0x2000, 0x200a)})
+    table.update({c: u'-' for c in range(0x2010, 0x2015)})
+    table.update({c: u"'" for c in range(0x2018, 0x201b)})
+    table.update({c: u'"' for c in range(0x201c, 0x201f)})
 
     return table
 
+
 def buildPunctuationExpand():
-    return {u'\xa9' : u'(C)',
-            u'\xab' : u'<<',
-            u'\xbb' : u'>>',
-            u'\xae' : u'(R)',
-            u'\xbc' : u'1/4',
-            u'\xbd' : u'1/2',
-            u'\xbe' : u'3/4',
-            u'\u2025' : u'..',
-            u'\u2026' : u'...',
-            u'\u2033' : u"''",
-            u'\u2034' : u"'''",
-            u'\u2036' : u"''",
-            u'\u2037' : u"'''",
-            u'\u203c' : u"!!",
-            u'\u2047' : u"??",
-            u'\u2048' : u"?!",
-            u'\u2049' : u"!?",
-            u'\u2057' : u"''''",
+    return {u'\xa9': u'(C)',
+            u'\xab': u'<<',
+            u'\xbb': u'>>',
+            u'\xae': u'(R)',
+            u'\xbc': u'1/4',
+            u'\xbd': u'1/2',
+            u'\xbe': u'3/4',
+            u'\u2025': u'..',
+            u'\u2026': u'...',
+            u'\u2033': u"''",
+            u'\u2034': u"'''",
+            u'\u2036': u"''",
+            u'\u2037': u"'''",
+            u'\u203c': u"!!",
+            u'\u2047': u"??",
+            u'\u2048': u"?!",
+            u'\u2049': u"!?",
+            u'\u2057': u"''''",
             }
+
 
 def listAllPunctuation():
     """ Creates the list of all punctuation and symbols"""
@@ -114,21 +119,24 @@ def listAllPunctuation():
     for row in acquireUnicode():
         if row['General_Category'][0] in punctCat:
             punct.append(int(row['CodePoint'], 16))
-   
+
     return punct
+
 
 def windowsFileNameReserved():
     reserved = ['\\', '/', ':', '*', '?', '"', '<', '>', '|', '.']
-    return {ord(c):u'_' for c in reserved}
+    return {ord(c): u'_' for c in reserved}
+
 
 def uriReserved():
-    reserved =  ['!', '#', '$', '&', "'", '(', ')', '*', '+', ',', '/', ':', 
-                 ';', '=', '?', '@', '[', ']', '%']
-    return {c:'%{0:02X}'.format(ord(c)) for c in reserved}
+    reserved = ['!', '#', '$', '&', "'", '(', ')', '*', '+', ',', '/', ':',
+                ';', '=', '?', '@', '[', ']', '%']
+    return {c: '%{0:02X}'.format(ord(c)) for c in reserved}
 
 #------------------------------------------------------------------------------
 # Generators
 #------------------------------------------------------------------------------
+
 
 def acquireUnicode():
     dirName = os.path.dirname(__file__)
@@ -137,6 +145,7 @@ def acquireUnicode():
         reader = csv.DictReader(f, delimiter=';')
         for row in reader:
             yield row
+
 
 def tokenize(s):
     for i, x in enumerate(re.split('(\W+)', s, flags=re.UNICODE)):
@@ -148,6 +157,7 @@ def tokenize(s):
                 if c != ' ':
                     yield c
 
+
 def expandToken(table, tokens):
     for s in tokens:
         if s in table:
@@ -156,14 +166,17 @@ def expandToken(table, tokens):
         else:
             yield s
 
+
 def window(seq, n=2):
-    "Returns a sliding window (of width n) over data from the iterable"
-    "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
-    " http://stackoverflow.com/questions/6822725/rolling-or-sliding-window-iterator-in-python "
+    """
+    Returns a sliding window (of width n) over data from the iterable
+        s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+    http://stackoverflow.com/questions/6822725/rolling-or-sliding-window-iterator-in-python
+    """
     it = iter(seq)
     result = tuple(itertools.islice(it, n))
     if len(result) == n:
-        yield result    
+        yield result
     for elem in it:
         result = result[1:] + (elem,)
         yield result
@@ -172,13 +185,16 @@ def window(seq, n=2):
 # Monads
 #------------------------------------------------------------------------------
 
+
 @curry
 def ignoreToken(table, s):
     return Nothing if s in table else Just(s)
 
+
 @curry
 def replaceToken(table, s):
     return Just(table[s]) if s in table else Just(s)
+
 
 @curry
 def replaceCharacters(table, s):
@@ -186,10 +202,12 @@ def replaceCharacters(table, s):
     s = b.translate(table)
     return Just(s)
 
+
 @curry
 def expandCharacters(table, s):
     expanded = [table[c] if c in table else c for c in s]
     return Just(''.join(expanded))
+
 
 #------------------------------------------------------------------------------
 # Class
@@ -211,21 +229,21 @@ class Normalizer(object):
     def _build_asciifier(self):
         cr = buildRomanizeReplace()
         cr.update(buildPunctuationReplace())
-        cr.update({ord(c):v for c,v in self.charReplace.items()})
+        cr.update({ord(c): v for c, v in self.charReplace.items()})
 
         ce = buildRomanizeExpand()
         ce.update(buildPunctuationExpand())
         ce.update(self.charExpand)
 
-        ci = {c:None for c in listAllPunctuation() if c > 0x7f}
-        ci.update({ord(c):None for c in self.charIgnore})
+        ci = {c: None for c in listAllPunctuation() if c > 0x7f}
+        ci.update({ord(c): None for c in self.charIgnore})
 
         def curried(s):
-            part = Just(s) 
+            part = Just(s)
             part >>= expandCharacters(ce)
             part >>= replaceCharacters(cr)
             part >>= replaceCharacters(ci)
-        
+
             return part.value
         return curried
 
@@ -246,18 +264,18 @@ class Normalizer(object):
 
     def _build_keyer(self):
         cr = buildRomanizeReplace()
-        cr.update({ord(c):v for c,v in self.charReplace.items()})
+        cr.update({ord(c): v for c, v in self.charReplace.items()})
 
         ce = buildRomanizeExpand()
         ce.update(self.charExpand)
 
-        ci = {c:None for c in listAllPunctuation()}
-        ci.update({ord(c):None for c in self.charIgnore})
+        ci = {c: None for c in listAllPunctuation()}
+        ci.update({ord(c): None for c in self.charIgnore})
 
         def curried(s):
             parts = []
             for token in expandToken(self.tokenExpand, tokenize(s)):
-                part = Just(token.lower()) 
+                part = Just(token.lower())
                 part >>= replaceToken(self.tokenReplace)
                 part >>= ignoreToken(self.tokenIgnore)
                 part >>= expandCharacters(ce)
@@ -289,7 +307,7 @@ class Normalizer(object):
 
         def curried(s):
             return s.translate(r).strip('_')
-            
+
         return curried
 
     @property
@@ -309,20 +327,20 @@ class Normalizer(object):
 
     def _build_queryfier(self):
         cr = buildRomanizeReplace()
-        cr.update({ord(c):v for c,v in self.charReplace.items()})
+        cr.update({ord(c): v for c, v in self.charReplace.items()})
 
         ce = buildRomanizeExpand()
         ce.update(self.charExpand)
 
-        ci = {c:None for c in listAllPunctuation() if c > 0x7f}
-        ci.update({ord(c):None for c in self.charIgnore})
+        ci = {c: None for c in listAllPunctuation() if c > 0x7f}
+        ci.update({ord(c): None for c in self.charIgnore})
 
         r = uriReserved()
 
         def curried(s):
             parts = []
             for token in expandToken(self.tokenExpand, tokenize(s)):
-                part = Just(token.lower()) 
+                part = Just(token.lower())
                 part >>= replaceToken(self.tokenReplace)
                 part >>= ignoreToken(self.tokenIgnore)
                 part >>= expandCharacters(ce)
@@ -357,5 +375,4 @@ class Normalizer(object):
 #------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    pass    
-        
+    pass
