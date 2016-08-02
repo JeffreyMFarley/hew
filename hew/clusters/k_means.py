@@ -95,9 +95,8 @@ def lloyds_algorithm(X, initial_MU, distance_fn):
     from hew.structures.vector import centroid
 
     MU = list(initial_MU)
-    l = len(X)
     k = len(MU)
-    C = [None] * l
+    C = [None] * len(X)
     iterations = 0
     done = False
 
@@ -122,7 +121,8 @@ def optimal_clusters(X, distance_fn, max_k=10, samples=10):
     `max_k` is the maximum number of clusters to test for
     `samples` is the number of monte carlo simulations to run at each step
     """
-    from hew import RunningStatistics, MonteCarlo
+    from hew.structures.running_statistics import *
+    from hew.structures.monte_carlo import *
     from hew.structures.vector import bounds
     import math
 
@@ -174,12 +174,12 @@ class KMeans(object):
     # -------------------------------------------------------------------------
     @classmethod
     def fromTable(cls, k, arrayOfDictionaries, vectorFields, distance_fn):
-        """ Initializes a k-means instance from a tabular structure """
-        vectors = []
-        for o in arrayOfDictionaries:
-            vectors.append(tuple([float(o[f])
-                                  if f in o else 0.
-                                  for f in vectorFields]))
+        """
+        Initializes a k-means instance from a tabular structure
+        """
+        from hew.structures.vector import extractFloatVectors
+
+        vectors = extractFloatVectors(arrayOfDictionaries, vectorFields)
 
         if k == -1:
             k = optimal_clusters(vectors, distance_fn, 20)

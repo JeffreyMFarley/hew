@@ -1,22 +1,25 @@
 import unittest
 import random
 import collections
-from hew import KMeans
+from hew.clusters.k_means import KMeans
 from hew.structures.vector import distance_euclid_squared as distance_fn
+
 
 def random_point(d=2):
     return tuple([random.uniform(-1, 1) for _ in range(d)])
+
 
 def init_board_gauss(n, k, d=2):
     n0 = n // k
     X = []
     for i in range(k):
         mu = random_point(d)
-        sigma = random.uniform(0.05,0.33)
+        sigma = random.uniform(0.05, 0.33)
         for _ in range(n0):
-            x = tuple([random.gauss(mu[axis],sigma) for axis in range(d)])
+            x = tuple([random.gauss(mu[axis], sigma) for axis in range(d)])
             X.append(x)
     return X
+
 
 def init_4_clusters(n=200):
     MU = [(-0.5, -0.5), (0.5, 0.5), (-0.5, 0.5), (0.5, -0.5)]
@@ -28,12 +31,12 @@ def init_4_clusters(n=200):
     X = []
     for i, mu in enumerate(MU):
         for _ in range(n0):
-            x = tuple([random.gauss(mu[axis],sigma) 
-                        for axis in range(d)])
+            x = tuple([random.gauss(mu[axis], sigma) for axis in range(d)])
             X.append(x)
     return X
 
 # -----------------------------------------------------------------------------
+
 
 class Test_k_means(unittest.TestCase):
     def test_smoke(self):
@@ -85,9 +88,14 @@ class Test_k_means(unittest.TestCase):
         from hew.structures.vector import distance_euclid_squared as distance_fn
 
         X = init_4_clusters()
-        centroids = [(-0.75, -0.75), (0.75, 0.75), (-0.75, 0.75), (0.75, -0.75)]
+        centroids = [(-0.75, -0.75),
+                     (0.75, 0.75),
+                     (-0.75, 0.75),
+                     (0.75, -0.75)
+                     ]
 
-        actual, clusters, iterations = lloyds_algorithm(X, centroids, distance_fn)
+        actual, clusters, iterations = lloyds_algorithm(X, centroids,
+                                                        distance_fn)
 
         self.assertAlmostEqual(actual[0][0], -0.5, 1)
         self.assertAlmostEqual(actual[0][1], -0.5, 1)
@@ -100,7 +108,7 @@ class Test_k_means(unittest.TestCase):
 
     @unittest.skip('used for debugging command line')
     def test_commandLine(self):
-        args = collections.namedtuple("Parsed", 'input clusters resultColumn outputFileName fields')
+        args = collections.namedtuple("Parsed",'input clusters resultColumn outputFileName fields')
         args.input = r'C:\Users\jfarley.15T-5CG3332ZD5\Documents\Personal\uw_in.txt'
         args.clusters = 10
         args.distance = 'cosine'

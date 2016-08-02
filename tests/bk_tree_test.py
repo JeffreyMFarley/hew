@@ -1,17 +1,19 @@
 import os
 import unittest
-import hew
+import hew.structures.bk_tree as sut
+
 
 class Test_BKTree(unittest.TestCase):
     def setUp(self):
-        fileName = os.path.join(os.path.dirname(__file__), 'english_common_1000.txt')
+        fileName = os.path.join(os.path.dirname(__file__),
+                                'english_common_1000.txt')
         with open(fileName, 'r') as f:
             self.words1000 = {line.strip() for line in f}
 
-        self.target = hew.BKNode('pear')
+        self.target = sut.BKNode('pear')
         for w in sorted(self.words1000):
-            self.target.insert(w);
-        
+            self.target.insert(w)
+
     def test_searchFord(self):
         results = []
         probes = self.target.search('ford', 1, results)

@@ -2,10 +2,13 @@ import sys
 import cProfile
 import unittest
 import hew
+from hew.normalizer import Normalizer
+
 if sys.version < '3':
     from mock import patch
 else:
     from unittest.mock import patch
+
 
 class Test_Tokenizer(unittest.TestCase):
     def setUp(self):
@@ -25,14 +28,15 @@ class Test_Tokenizer(unittest.TestCase):
 
     def test_other_whitepsace(self):
         s = 'This\tstring\nhas\rother\ttoken\rmarkers.'
-        expected = ['This', '\t', 'string', '\n', 'has', '\r', 'other', '\t', 
+        expected = ['This', '\t', 'string', '\n', 'has', '\r', 'other', '\t',
                     'token', '\r', 'markers', '.']
         actual = list(self.target(s))
         self.assertEqual(expected, actual)
 
+
 class Test_Normalizer(unittest.TestCase):
     def setUp(self):
-        self.target = hew.Normalizer()
+        self.target = Normalizer()
         # This is a test sentence. With punctuation, acronyms and accents!
         self.data = u'\u00de\u00ef\u015d is a TESTSENT. With punct, acro & a\u0109\u010bents!'
 
