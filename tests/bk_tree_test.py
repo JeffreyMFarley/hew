@@ -1,6 +1,6 @@
 import os
 import unittest
-import hew.structures.bk_tree as sut
+import hew as sut
 
 
 class Test_BKTree(unittest.TestCase):

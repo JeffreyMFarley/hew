@@ -1,6 +1,7 @@
 import unittest
-import hew.classifiers.c45 as sut
 import sys
+import hew as sut
+
 
 class Test_C45_test(unittest.TestCase):
     def setUp(self):

@@ -2,8 +2,7 @@ import sys
 import unittest
 import math
 from random import random
-from hew.structures.kd_tree import KDTree
-from hew.structures.vector import distance_euclid_squared as distance_fn
+from hew import KDTree, distance_fn
 
 if sys.version >= '3':
     xrange = range

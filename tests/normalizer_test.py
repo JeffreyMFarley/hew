@@ -2,7 +2,7 @@ import sys
 import cProfile
 import unittest
 import hew
-from hew.normalizer import Normalizer
+from hew import Normalizer
 
 if sys.version < '3':
     from mock import patch

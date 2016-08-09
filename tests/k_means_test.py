@@ -1,8 +1,7 @@
 import unittest
 import random
 import collections
-from hew.clusters.k_means import KMeans
-from hew.structures.vector import distance_euclid_squared as distance_fn
+from hew import KMeans, distance_fn
 
 
 def random_point(d=2):

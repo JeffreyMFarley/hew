@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 
 
-class RunningStatistics:
+class RunningStatistics(object):
     """
     This encapsulates statistical measures that can be queried at any time
     """
