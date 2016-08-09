@@ -24,7 +24,7 @@ def init_4_clusters(n=200):
     MU = [(-0.5, -0.5), (0.5, 0.5), (-0.5, 0.5), (0.5, -0.5)]
     k = len(MU)
     d = len(MU[0])
-    sigma = 0.1
+    sigma = 0.01
 
     n0 = n // k
     X = []

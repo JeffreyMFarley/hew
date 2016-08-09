@@ -87,10 +87,12 @@ def kmeans_plus_plus(X, k, distance_fn):
 
 
 # https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
-def lloyds_algorithm(X, initial_MU, distance_fn):
+def lloyds_algorithm(X, initial_MU, distance_fn, calc_hook=None):
     """
-    `X` is the array of points,
+    'X' is the array of points,
     'initial_MU' is the initial array of centroids
+    'distance_fn' a method that calculates the distance between to vectors
+    'calc_hook' if provided, will be called on every iteration
     """
     from hew.structures.vector import centroid
 
@@ -111,6 +113,9 @@ def lloyds_algorithm(X, initial_MU, distance_fn):
             MU[j] = centroid(members)
 
         done = has_converged(MU, old)
+
+        if calc_hook:
+            calc_hook(MU, C, iterations)
 
     return MU, C, iterations
 
